@@ -7,15 +7,11 @@
   <style>
     :root{
       --bg:#10162a;
-      --card:#182042;
       --text:#eef2ff;
       --muted:#b7c0e6;
       --line:rgba(255,255,255,.14);
-
-      --accent:#a7b4ff;     /* pastel lavender */
       --good:#43d38e;
       --bad:#ff6a86;
-
       --radius:18px;
     }
     *{ box-sizing:border-box; }
@@ -42,7 +38,6 @@
       font-weight: 700;
       white-space: nowrap;
     }
-
     .card{
       margin-top: 14px;
       background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
@@ -61,10 +56,7 @@
       letter-spacing: .2px;
     }
     .hint{ color:var(--muted); font-size: 13px; margin-top: 6px; }
-
     .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
-    .grid3{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; }
-
     label{ display:block; margin-top:10px; font-weight:800; font-size: 13px; color:#dfe6ff; }
     select, input, button{
       width:100%;
@@ -92,9 +84,7 @@
       color: var(--text);
       font-weight: 850;
     }
-
     .hidden{ display:none; }
-
     .result{
       margin-top: 12px;
       padding: 14px;
@@ -107,6 +97,7 @@
     }
     .result.good{ color: var(--good); }
     .result.bad{ color: var(--bad); }
+    .small{ margin-top: 8px; color: var(--muted); font-size: 13px; }
 
     .feedback{
       margin-top: 12px;
@@ -116,46 +107,46 @@
       background: rgba(0,0,0,.12);
     }
     .fb-row{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .small{ margin-top: 8px; color: var(--muted); font-size: 13px; }
 
     @media (max-width: 820px){
       header{ flex-direction: column; align-items:flex-start; }
-      .grid2, .grid3, .fb-row{ grid-template-columns: 1fr; }
+      .grid2, .fb-row{ grid-template-columns: 1fr; }
     }
-    .tipbox{
-  position: fixed;
-  top: 10px;
-  left: 10px;
-  z-index: 9999;
-  max-width: 340px;
-  padding: 10px 12px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.16);
-  background: rgba(16,22,42,.86);
-  backdrop-filter: blur(6px);
-  color: #eef2ff;
-  font-size: 13px;
-  font-weight: 850;
-}
-.tipbox.hidden{ display:none; }
 
-.is-invalid{
-  border-color: rgba(255,106,134,.9) !important;
-  box-shadow: 0 0 0 3px rgba(255,106,134,.15);
-}
+    /* Tipbox + invalid */
+    .tipbox{
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 9999;
+      max-width: 340px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(16,22,42,.86);
+      backdrop-filter: blur(6px);
+      color: #eef2ff;
+      font-size: 13px;
+      font-weight: 850;
+    }
+    .tipbox.hidden{ display:none; }
+    .is-invalid{
+      border-color: rgba(255,106,134,.9) !important;
+      box-shadow: 0 0 0 3px rgba(255,106,134,.15);
+    }
   </style>
 </head>
 
 <body>
-<div id="tipbox" class="tipbox hidden">—</div>
-</html>
+  <div id="tipbox" class="tipbox hidden">—</div>
+
   <div class="wrap">
     <header>
       <div>
         <h1>DressGPT</h1>
-        <div class="tag">Versie 3 — één pagina, strakker, minder fouten</div>
+        <div class="tag">Versie 3 — één pagina + tips als er iets mist</div>
       </div>
-      <span class="pill">local: 127.0.0.1:8000</span>
+      <span class="pill">API: dressgpt.onrender.com</span>
     </header>
 
     <!-- BASIS -->
@@ -317,102 +308,10 @@
     const FEEDBACK_URL = `${API_BASE}/feedback`;
     const el = (id) => document.getElementById(id);
 
-    function setTip(msg){
-  const box = el("tipbox");
-  if (!msg){
-    box.classList.add("hidden");
-    box.textContent = "";
-    return;
-  }
-  box.classList.remove("hidden");
-  box.textContent = msg;
-}
-
-function clearInvalid(){
-  document.querySelectorAll(".is-invalid").forEach(x => x.classList.remove("is-invalid"));
-}
-
-function markInvalid(id){
-  const node = el(id);
-  if (node) node.classList.add("is-invalid");
-}
-
-function validateOutfit(){
-  clearInvalid();
-
-  // helper
-  const val = (id) => (el(id)?.value ?? "").trim();
-  const isNone = (v) => !v || v === "none";
-
-  const garment = val("garment_type");     // jurk/tshirt/blouse/trui/...
-  const isDress = garment === "jurk";
-
-  // 1) basis
-  if (isNone(val("style"))){ markInvalid("style"); return "Kies een style."; }
-
-  if (isNone(val("top_color"))){
-    markInvalid("top_color");
-    return "Kies een bovenstuk kleur.";
-  }
-
-  // 2) outer layer: als gekozen → kleur verplicht
-  if (!isNone(val("outer_layer")) && isNone(val("outer_layer_color"))){
-    markInvalid("outer_layer_color");
-    return "Je hebt een vest/laag gekozen. Kies ook de vest kleur.";
-  }
-
-  // 3) onderstuk alleen als GEEN jurk
-  if (!isDress){
-    if (isNone(val("bottom_type"))){
-      markInvalid("bottom_type");
-      return "Kies onderstuk: broek of rok.";
-    }
-    if (val("bottom_type") !== "none" && isNone(val("bottom_color"))){
-      markInvalid("bottom_color");
-      return "Kies een onderstuk kleur.";
-    }
-  }
-
-  // 4) schoenen
-  if (isNone(val("shoes_color"))){
-    markInvalid("shoes_color");
-    return "Kies een schoenen kleur.";
-  }
-
-  // 5) tas: als type ≠ none → kleur verplicht
-  if (!isNone(val("bag_type")) && isNone(val("bag_color"))){
-    markInvalid("bag_color");
-    return "Je hebt een tas gekozen. Kies ook de tas kleur.";
-  }
-
-  return ""; // alles ok
-}
-
-// Laat tip live updaten bij changes
-function hookTips(){
-  const ids = [
-    "style","garment_type","top_color",
-    "outer_layer","outer_layer_color",
-    "bottom_type","bottom_subtype","bottom_color",
-    "shoe_type","shoes_color",
-    "bag_type","bag_color"
-  ];
-  ids.forEach(id => {
-    const node = el(id);
-    if (!node) return;
-    node.addEventListener("change", () => setTip(validateOutfit()));
-    node.addEventListener("input",  () => setTip(validateOutfit()));
-  });
-
-  setTip(validateOutfit());
-}
-
-// 1x aanroepen bij init
-hookTips();
-
     let lastPayload = null;
     let lastResult = null;
 
+    // ---- kleuren ----
     const COLORS = [
       "zwart","wit",
       "rood","lichtrood","donkerrood",
@@ -437,7 +336,7 @@ hookTips();
       for (const c of COLORS){
         const opt = document.createElement("option");
         opt.value = c;
-        opt.textContent = c.replaceAll("_","-");
+        opt.textContent = c;
         s.appendChild(opt);
       }
       s.value = allowNone ? "none" : "zwart";
@@ -449,6 +348,7 @@ hookTips();
     fillColors("bag_color");
     fillColors("outer_layer_color", true);
 
+    // ---- helpers ----
     function setOptions(selectEl, values, selectedValue) {
       selectEl.innerHTML = "";
       for (const v of values) {
@@ -477,9 +377,7 @@ hookTips();
       }
 
       setOptions(subtypeEl, options, options.includes(current) ? current : fallback);
-
-      const hideBottomColor = (bt === "none");
-      el("bottom_color_row").classList.toggle("hidden", hideBottomColor);
+      el("bottom_color_row").classList.toggle("hidden", bt === "none");
     }
 
     function syncDress() {
@@ -497,7 +395,6 @@ hookTips();
     function syncBag() {
       const hasBag = el("bag_type").value !== "none";
       el("bag_color_block").classList.toggle("hidden", !hasBag);
-      if (!hasBag) el("bag_color").value = "zwart";
     }
 
     function syncOuter() {
@@ -516,6 +413,64 @@ hookTips();
     syncBag();
     syncOuter();
 
+    // ---- tipbox + validatie ----
+    function setTip(msg){
+      const box = el("tipbox");
+      if (!msg){
+        box.classList.add("hidden");
+        box.textContent = "";
+        return;
+      }
+      box.classList.remove("hidden");
+      box.textContent = msg;
+    }
+
+    function clearInvalid(){
+      document.querySelectorAll(".is-invalid").forEach(x => x.classList.remove("is-invalid"));
+    }
+    function markInvalid(id){
+      const node = el(id);
+      if (node) node.classList.add("is-invalid");
+    }
+
+    function validateOutfit(){
+      clearInvalid();
+      const val = (id) => (el(id)?.value ?? "").trim();
+      const isNone = (v) => !v || v === "none";
+      const isDress = val("garment_type") === "jurk";
+
+      if (isNone(val("top_color"))){ markInvalid("top_color"); return "Kies een bovenstuk kleur."; }
+      if (!isNone(val("outer_layer")) && isNone(val("outer_layer_color"))){
+        markInvalid("outer_layer_color"); return "Kies ook een vest-kleur.";
+      }
+
+      if (!isDress){
+        if (isNone(val("bottom_type"))){ markInvalid("bottom_type"); return "Kies broek of rok."; }
+        if (val("bottom_type") !== "none" && isNone(val("bottom_color"))){
+          markInvalid("bottom_color"); return "Kies een onderstuk kleur.";
+        }
+      }
+
+      if (isNone(val("shoes_color"))){ markInvalid("shoes_color"); return "Kies een schoenen kleur."; }
+      if (!isNone(val("bag_type")) && isNone(val("bag_color"))){
+        markInvalid("bag_color"); return "Kies ook een tas-kleur.";
+      }
+
+      return "";
+    }
+
+    function hookTips(){
+      const ids = ["garment_type","top_color","outer_layer","outer_layer_color","bottom_type","bottom_subtype","bottom_color","shoes_color","bag_type","bag_color","style"];
+      ids.forEach(id => {
+        const node = el(id);
+        if (!node) return;
+        node.addEventListener("change", () => setTip(validateOutfit()));
+      });
+      setTip(validateOutfit());
+    }
+    hookTips();
+
+    // ---- feedback ----
     function resetFeedback(){
       el("feedback_block").classList.add("hidden");
       el("fb_note_block").classList.add("hidden");
@@ -524,17 +479,15 @@ hookTips();
     }
     resetFeedback();
 
+    // ---- knop ----
     el("btn").addEventListener("click", async () => {
-
-  const msg = validateOutfit();
-     if (msg) {
-     setTip(msg);
-     el("result").textContent = "—";
-     return; 
-  }
-  setTip(""); 
-});
-
+      const msg = validateOutfit();
+      if (msg){
+        setTip(msg);
+        el("result").textContent = "—";
+        return;
+      }
+      setTip("");
 
       el("err").textContent = "";
       el("result").textContent = "⏳ …";
@@ -563,8 +516,7 @@ hookTips();
         shoe_type: el("shoe_type").value,
         bag_type: bagType,
 
-        // oude velden (compatibel met je huidige model)
-        top_color: isDress === "yes" ? "none" : el("top_color").value,
+        top_color: (isDress === "yes") ? "none" : el("top_color").value,
         top_type: (garment === "jurk") ? "none" : garment,
         is_dress: isDress,
         dress_color: (isDress === "yes") ? el("top_color").value : "none",
@@ -612,10 +564,10 @@ hookTips();
       } catch (e) {
         el("result").textContent = "❌ Server niet bereikbaar";
         el("result").classList.add("bad");
+        el("err").textContent = "Tip: backend online?";
       }
-      ;
+    });
 
-    // feedback
     el("fb_yes").addEventListener("click", async () => {
       el("fb_note_block").classList.add("hidden");
       el("fb_status").textContent = "Opslaan…";

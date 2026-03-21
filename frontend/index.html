@@ -122,6 +122,27 @@
       header{ flex-direction: column; align-items:flex-start; }
       .grid2, .grid3, .fb-row{ grid-template-columns: 1fr; }
     }
+    .tipbox{
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 9999;
+  max-width: 340px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(16,22,42,.86);
+  backdrop-filter: blur(6px);
+  color: #eef2ff;
+  font-size: 13px;
+  font-weight: 850;
+}
+.tipbox.hidden{ display:none; }
+
+.is-invalid{
+  border-color: rgba(255,106,134,.9) !important;
+  box-shadow: 0 0 0 3px rgba(255,106,134,.15);
+}
   </style>
 </head>
 
@@ -291,9 +312,103 @@
   </div>
 
   <script>
-    const API_URL = "http://127.0.0.1:8000/predict";
-    const FEEDBACK_URL = "http://127.0.0.1:8000/feedback";
+    const API_BASE = "https://dressgpt.onrender.com";
+    const API_URL = `${API_BASE}/predict`;
+    const FEEDBACK_URL = `${API_BASE}/feedback`;
     const el = (id) => document.getElementById(id);
+
+    function setTip(msg){
+  const box = el("tipbox");
+  if (!msg){
+    box.classList.add("hidden");
+    box.textContent = "";
+    return;
+  }
+  box.classList.remove("hidden");
+  box.textContent = msg;
+}
+
+function clearInvalid(){
+  document.querySelectorAll(".is-invalid").forEach(x => x.classList.remove("is-invalid"));
+}
+
+function markInvalid(id){
+  const node = el(id);
+  if (node) node.classList.add("is-invalid");
+}
+
+function validateOutfit(){
+  clearInvalid();
+
+  // helper
+  const val = (id) => (el(id)?.value ?? "").trim();
+  const isNone = (v) => !v || v === "none";
+
+  const garment = val("garment_type");     // jurk/tshirt/blouse/trui/...
+  const isDress = garment === "jurk";
+
+  // 1) basis
+  if (isNone(val("style"))){ markInvalid("style"); return "Kies een style."; }
+
+  if (isNone(val("top_color"))){
+    markInvalid("top_color");
+    return "Kies een bovenstuk kleur.";
+  }
+
+  // 2) outer layer: als gekozen → kleur verplicht
+  if (!isNone(val("outer_layer")) && isNone(val("outer_layer_color"))){
+    markInvalid("outer_layer_color");
+    return "Je hebt een vest/laag gekozen. Kies ook de vest kleur.";
+  }
+
+  // 3) onderstuk alleen als GEEN jurk
+  if (!isDress){
+    if (isNone(val("bottom_type"))){
+      markInvalid("bottom_type");
+      return "Kies onderstuk: broek of rok.";
+    }
+    if (val("bottom_type") !== "none" && isNone(val("bottom_color"))){
+      markInvalid("bottom_color");
+      return "Kies een onderstuk kleur.";
+    }
+  }
+
+  // 4) schoenen
+  if (isNone(val("shoes_color"))){
+    markInvalid("shoes_color");
+    return "Kies een schoenen kleur.";
+  }
+
+  // 5) tas: als type ≠ none → kleur verplicht
+  if (!isNone(val("bag_type")) && isNone(val("bag_color"))){
+    markInvalid("bag_color");
+    return "Je hebt een tas gekozen. Kies ook de tas kleur.";
+  }
+
+  return ""; // alles ok
+}
+
+// Laat tip live updaten bij changes
+function hookTips(){
+  const ids = [
+    "style","garment_type","top_color",
+    "outer_layer","outer_layer_color",
+    "bottom_type","bottom_subtype","bottom_color",
+    "shoe_type","shoes_color",
+    "bag_type","bag_color"
+  ];
+  ids.forEach(id => {
+    const node = el(id);
+    if (!node) return;
+    node.addEventListener("change", () => setTip(validateOutfit()));
+    node.addEventListener("input",  () => setTip(validateOutfit()));
+  });
+
+  setTip(validateOutfit());
+}
+
+// 1x aanroepen bij init
+hookTips();
 
     let lastPayload = null;
     let lastResult = null;
@@ -410,6 +525,17 @@
     resetFeedback();
 
     el("btn").addEventListener("click", async () => {
+
+  const msg = validateOutfit();
+     if (msg) {
+     setTip(msg);
+     el("result").textContent = "—";
+     return; 
+  }
+  setTip(""); 
+});
+
+
       el("err").textContent = "";
       el("result").textContent = "⏳ …";
       el("result").classList.remove("good","bad");
@@ -486,9 +612,8 @@
       } catch (e) {
         el("result").textContent = "❌ Server niet bereikbaar";
         el("result").classList.add("bad");
-        el("err").textContent = "Tip: staat FastAPI aan op 127.0.0.1:8000 ?";
       }
-    });
+      ;
 
     // feedback
     el("fb_yes").addEventListener("click", async () => {

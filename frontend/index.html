@@ -283,6 +283,8 @@
 
       <div class="result" id="result">—</div>
       <div class="small" id="err"></div>
+      <div class="small" id="reason"></div>
+      <div class="small" id="tips"></div>
 
       <!-- FEEDBACK -->
       <div class="feedback hidden" id="feedback_block">
@@ -313,7 +315,7 @@
 
     // ---- kleuren ----
     const COLORS = [
-      "zwart","wit",
+      "zwart","wit","grijs","bruin",
       "rood","lichtrood","donkerrood",
       "oranje","lichtoranje","donkeroranje",
       "geel","lichtgeel","donkergeel",
@@ -459,16 +461,55 @@
       return "";
     }
 
-    function hookTips(){
-      const ids = ["garment_type","top_color","outer_layer","outer_layer_color","bottom_type","bottom_subtype","bottom_color","shoes_color","bag_type","bag_color","style"];
-      ids.forEach(id => {
-        const node = el(id);
-        if (!node) return;
-        node.addEventListener("change", () => setTip(validateOutfit()));
-      });
-      setTip(validateOutfit());
-    }
-    hookTips();
+   function getDefaultTip(){
+  const style = el("style").value;
+  const garment = el("garment_type").value;
+
+  if (garment === "jurk") {
+    return "Tip: bij een jurk werken rustige schoenen en een tas in een neutrale kleur vaak mooi.";
+  }
+
+  if (style === "business") {
+    return "Tip: bij business passen rustige kleuren en nette schoenen vaak het best.";
+  }
+
+  if (style === "casual") {
+    return "Tip: casual outfits mogen losser zijn, maar 2 of 3 hoofdkleuren houden het vaak mooier.";
+  }
+
+  if (style === "netjes") {
+    return "Tip: voor een nette outfit werken zwart, wit, beige en donkerblauw vaak goed samen.";
+  }
+
+  return "Tip: kies kleuren die rustig samen ogen en houd accessoires simpel.";
+}
+
+function updateTipbox(){
+  const errorMsg = validateOutfit();
+  if (errorMsg){
+    setTip(errorMsg);
+  } else {
+    setTip(getDefaultTip());
+  }
+}
+
+function hookTips(){
+  const ids = [
+    "garment_type","top_color","outer_layer","outer_layer_color",
+    "bottom_type","bottom_subtype","bottom_color",
+    "shoes_color","bag_type","bag_color","style"
+  ];
+
+  hookTips();
+
+  ids.forEach(id => {
+    const node = el(id);
+    if (!node) return;
+    node.addEventListener("change", updateTipbox);
+  });
+
+  updateTipbox();
+}
 
     // ---- feedback ----
     function resetFeedback(){
@@ -533,12 +574,18 @@
 
       lastPayload = payload;
 
+      el("reason").textContent = "";
+      el("tips").textContent = "";
+
       try {
         const res = await fetch(API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         });
+
+        el("reason").textContent = "";
+        el("tips").textContent = "";
 
         if (!res.ok) {
           const txt = await res.text();
@@ -549,6 +596,8 @@
         }
 
         const data = await res.json();
+        el("reason").textContent = data.reason ? `Waarom: ${data.reason}` : "";
+        el("tips").textContent = data.tips?.length ? `Tip: ${data.tips.join(" | ")}` : "";
         lastResult = data;
 
         if (data.label === 1){
@@ -565,6 +614,8 @@
         el("result").textContent = "❌ Server niet bereikbaar";
         el("result").classList.add("bad");
         el("err").textContent = "Tip: backend online?";
+        el("reason").textContent = "";
+        el("tips").textContent = "";
       }
     });
 
@@ -604,11 +655,15 @@
         body: JSON.stringify(body)
       });
 
-      if (!res.ok){
+   if (!res.ok) {
         const txt = await res.text();
-        el("fb_status").textContent = `Fout: ${res.status} ${txt}`;
-        return;
-      }
+        el("result").textContent = "❌ Error";
+        el("result").classList.add("bad");
+        el("err").textContent = `Server: ${res.status} ${txt}`;
+        el("reason").textContent = "";
+        el("tips").textContent = "";
+       return;
+}
 
       el("fb_status").textContent = "✅ Opgeslagen";
       el("fb_note").value = "";

@@ -517,14 +517,6 @@ function updateTipbox(){
   }
 }
 
-  ids.forEach(id => {
-    const node = el(id);
-    if (!node) return;
-    node.addEventListener("change", updateTipbox);
-  });
-
-  updateTipbox();
-
     // ---- feedback ----
     function resetFeedback(){
       el("feedback_block").classList.add("hidden");
@@ -649,19 +641,23 @@ function updateTipbox(){
       await sendFeedback(false, el("fb_note").value.trim());
     });
 
+    function getManualTip(){
+  return el("manual_tip_input")?.value?.trim() || "";
+}
+
     async function sendFeedback(agree, note){
       if (!lastPayload || !lastResult){
         el("fb_status").textContent = "Eerst checken.";
         return;
       }
 
-      const body = {
-        agree,
-        predicted_label: lastResult.label,
-        confidence: lastResult.confidence ?? null,
-        note,
-        payload: lastPayload
-      };
+    const body = {
+     agree,
+     predicted_label: lastResult.label,
+     confidence: lastResult.confidence ?? null,
+     note: note + " | TIP: " + getManualTip(),
+     payload: lastPayload
+     };
 
       const res = await fetch(FEEDBACK_URL, {
         method: "POST",

@@ -19,6 +19,8 @@ app.add_middleware(
 )
 
 MODEL_PATH = Path(__file__).parent / "model.joblib"
+FEEDBACK_PATH = Path(__file__).parent / "feedback.csv"
+
 model = joblib.load(MODEL_PATH) if MODEL_PATH.exists() else None
 
 FEATURES = [
@@ -26,6 +28,7 @@ FEATURES = [
     "bottom_type", "bottom_color", "shoes_color", "style",
     "bag_present", "bag_color"
 ]
+
 
 class Outfit(BaseModel):
     garment_type: str = "tshirt"
@@ -47,25 +50,14 @@ class Outfit(BaseModel):
     bag_present: str = "no"
     bag_color: str = "none"
 
-@app.get("/")
-def home():
-    return {"status": "ok", "model_loaded": model is not None}
 
-@app.post("/predict")
-def predict(outfit: Outfit):
-    if model is None:
-        return {"error": "Model not found. Run train_model.py first."}
+class Feedback(BaseModel):
+    agree: bool
+    predicted_label: int
+    confidence: Optional[float] = None
+    note: str = ""
+    payload: dict[str, Any]
 
-    data = outfit.model_dump()
-    df = pd.DataFrame([data])[FEATURES]
-    pred = int(model.predict(df)[0])
-
-    conf = None
-    if hasattr(model, "predict_proba"):
-        conf = float(model.predict_proba(df).max())
-
-    return {"label": pred, "confidence": conf}
-from pydantic import BaseModel
 
 def build_reason_and_tips(data: dict, pred: int):
     tips = []
@@ -92,30 +84,16 @@ def build_reason_and_tips(data: dict, pred: int):
 
     return reason, tips
 
-FEEDBACK_PATH = Path(__file__).parent / "feedback.csv"
 
-class Feedback(BaseModel):
-    agree: bool                 # True = eens, False = niet eens
-    predicted_label: int        # wat de AI zei (0/1)
-    confidence: Optional[float] = None
-    note: str = ""              # optioneel: waarom niet eens / extra uitleg
-    payload: dict[str, Any]     # de outfit die gestuurd werd
+@app.get("/")
+def home():
+    return {"status": "ok", "model_loaded": model is not None}
 
-@app.post("/feedback")
-def feedback(item: Feedback):
-    row = {
-        "ts": datetime.now().isoformat(timespec="seconds"),
-        "agree": int(item.agree),
-        "predicted_label": int(item.predicted_label),
-        "confidence": "" if item.confidence is None else float(item.confidence),
-        "note": item.note.strip(),
-        "payload_json": json.dumps(item.payload, ensure_ascii=False),
-    }
 
-    @app.post("/predict")
-    def predict(outfit: Outfit):
+@app.post("/predict")
+def predict(outfit: Outfit):
     if model is None:
-    return {"error": "Model not found. Run train_model.py first."}
+        return {"error": "Model not found. Run train_model.py first."}
 
     data = outfit.model_dump()
     df = pd.DataFrame([data])[FEATURES]
@@ -132,6 +110,18 @@ def feedback(item: Feedback):
         "confidence": conf,
         "reason": reason,
         "tips": tips
+    }
+
+
+@app.post("/feedback")
+def feedback(item: Feedback):
+    row = {
+        "ts": datetime.now().isoformat(timespec="seconds"),
+        "agree": int(item.agree),
+        "predicted_label": int(item.predicted_label),
+        "confidence": "" if item.confidence is None else float(item.confidence),
+        "note": item.note.strip(),
+        "payload_json": json.dumps(item.payload, ensure_ascii=False),
     }
 
     write_header = not FEEDBACK_PATH.exists()

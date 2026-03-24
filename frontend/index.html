@@ -129,24 +129,49 @@
       font-size: 13px;
       font-weight: 850;
     }
-    .tipbox.hidden{ display:none; }
-    .is-invalid{
-      border-color: rgba(255,106,134,.9) !important;
-      box-shadow: 0 0 0 3px rgba(255,106,134,.15);
-    }
+
+    .manual-tipbox{
+  position: fixed;
+  top: 70px;
+  right: 16px;
+  z-index: 9999;
+
+  width: 260px;
+  padding: 12px;
+
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(16,22,42,.95);
+  backdrop-filter: blur(6px);
+
+  box-shadow: 0 10px 25px rgba(0,0,0,.3);
+}
+
+.manual-tipbox input{
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.2);
+  background: rgba(0,0,0,.2);
+  color: white;
+}
   </style>
 </head>
 
 <body>
-  <div id="tipbox" class="tipbox hidden">—</div>
-
   <div class="wrap">
     <header>
       <div>
         <h1>DressGPT</h1>
         <div class="tag">Versie 3 — één pagina + tips als er iets mist</div>
       </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+      <button id="toggle_tipbox" class="pill" type="button">Tipbox</button>
+      <div id="manual_tipbox" class="manual-tipbox hidden">
+      <input id="manual_tip_input" type="text" placeholder="Typ je tip..." />
+       </div>
       <span class="pill">API: dressgpt.onrender.com</span>
+      </div>
     </header>
 
     <!-- BASIS -->
@@ -415,17 +440,16 @@
     syncBag();
     syncOuter();
 
-    // ---- tipbox + validatie ----
-    function setTip(msg){
-      const box = el("tipbox");
-      if (!msg){
-        box.classList.add("hidden");
-        box.textContent = "";
-        return;
-      }
-      box.classList.remove("hidden");
-      box.textContent = msg;
-    }
+    el("toggle_tipbox").addEventListener("click", () => {
+  const box = el("manual_tipbox");
+  box.classList.toggle("hidden");
+
+  if (box.classList.contains("hidden")) {
+    el("toggle_tipbox").textContent = "Tipbox";
+  } else {
+    el("toggle_tipbox").textContent = "Sluit";
+  }
+});
 
     function clearInvalid(){
       document.querySelectorAll(".is-invalid").forEach(x => x.classList.remove("is-invalid"));
@@ -493,15 +517,6 @@ function updateTipbox(){
   }
 }
 
-function hookTips(){
-  const ids = [
-    "garment_type","top_color","outer_layer","outer_layer_color",
-    "bottom_type","bottom_subtype","bottom_color",
-    "shoes_color","bag_type","bag_color","style"
-  ];
-
-  hookTips();
-
   ids.forEach(id => {
     const node = el(id);
     if (!node) return;
@@ -509,7 +524,6 @@ function hookTips(){
   });
 
   updateTipbox();
-}
 
     // ---- feedback ----
     function resetFeedback(){

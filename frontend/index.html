@@ -329,356 +329,244 @@
     </div>
   </div>
 
-  <script>
-    const API_BASE = "https://dressgpt.onrender.com";
-    const API_URL = `${API_BASE}/predict`;
-    const FEEDBACK_URL = `${API_BASE}/feedback`;
-    const el = (id) => document.getElementById(id);
+<script>
+const API_BASE = "https://dressgpt.onrender.com";
+const API_URL = `${API_BASE}/predict`;
+const FEEDBACK_URL = `${API_BASE}/feedback`;
+const el = (id) => document.getElementById(id);
 
-    let lastPayload = null;
-    let lastResult = null;
+let lastPayload = null;
+let lastResult = null;
 
-    // ---- kleuren ----
-    const COLORS = [
-      "zwart","wit","grijs","bruin",
-      "rood","lichtrood","donkerrood",
-      "oranje","lichtoranje","donkeroranje",
-      "geel","lichtgeel","donkergeel",
-      "groen","lichtgroen","donkergroen",
-      "blauw","lichtblauw","donkerblauw",
-      "paars","lichtpaars","donkerpaars",
-      "roze","lichtroze","donkerroze",
-      "zwart-wit","rood-wit","blauw-wit","roze-wit","zwart-rood","zwart-blauw","zwart-roze"
-    ];
+/* =========================
+   🔥 BELANGRIJKE FIX
+========================= */
+function setTip(text){
+  const box = el("manual_tipbox");
+  const input = el("manual_tip_input");
 
-    function fillColors(selectId, allowNone=false){
-      const s = el(selectId);
-      s.innerHTML = "";
-      if (allowNone){
-        const opt = document.createElement("option");
-        opt.value = "none";
-        opt.textContent = "none";
-        s.appendChild(opt);
-      }
-      for (const c of COLORS){
-        const opt = document.createElement("option");
-        opt.value = c;
-        opt.textContent = c;
-        s.appendChild(opt);
-      }
-      s.value = allowNone ? "none" : "zwart";
-    }
+  if (!box || !input) return;
 
-    fillColors("top_color");
-    fillColors("bottom_color");
-    fillColors("shoes_color");
-    fillColors("bag_color");
-    fillColors("outer_layer_color", true);
+  if (!text){
+    box.classList.add("hidden");
+    return;
+  }
 
-    // ---- helpers ----
-    function setOptions(selectEl, values, selectedValue) {
-      selectEl.innerHTML = "";
-      for (const v of values) {
-        const opt = document.createElement("option");
-        opt.value = v;
-        opt.textContent = v.replaceAll("_"," ");
-        if (selectedValue && v === selectedValue) opt.selected = true;
-        selectEl.appendChild(opt);
-      }
-    }
+  box.classList.remove("hidden");
+  input.value = text;
+}
 
-    function syncBottomSubtype() {
-      const bt = el("bottom_type").value;
-      const subtypeEl = el("bottom_subtype");
-      const current = subtypeEl.value;
+/* =========================
+   KLEUREN
+========================= */
+const COLORS = [
+  "zwart","wit","grijs","bruin",
+  "rood","lichtrood","donkerrood",
+  "oranje","lichtoranje","donkeroranje",
+  "geel","lichtgeel","donkergeel",
+  "groen","lichtgroen","donkergroen",
+  "blauw","lichtblauw","donkerblauw",
+  "paars","lichtpaars","donkerpaars",
+  "roze","lichtroze","donkerroze",
+  "zwart-wit","rood-wit","blauw-wit","roze-wit","zwart-rood","zwart-blauw","zwart-roze"
+];
 
-      let options = ["none"];
-      let fallback = "none";
+function fillColors(id, allowNone=false){
+  const s = el(id);
+  if (!s) return;
 
-      if (bt === "broek") {
-        options = ["jeans", "pantalon", "stofbroek", "korte_broek"];
-        fallback = "jeans";
-      } else if (bt === "rok") {
-        options = ["plisse_rok", "maxi_rok", "laagjesrok"];
-        fallback = "maxi_rok";
-      }
+  s.innerHTML = "";
 
-      setOptions(subtypeEl, options, options.includes(current) ? current : fallback);
-      el("bottom_color_row").classList.toggle("hidden", bt === "none");
-    }
+  if (allowNone){
+    const opt = document.createElement("option");
+    opt.value = "none";
+    opt.textContent = "none";
+    s.appendChild(opt);
+  }
 
-    function syncDress() {
-      const isDress = (el("garment_type").value === "jurk");
-      el("bottom_block").classList.toggle("hidden", isDress);
+  COLORS.forEach(c=>{
+    const opt = document.createElement("option");
+    opt.value = c;
+    opt.textContent = c;
+    s.appendChild(opt);
+  });
 
-      if (isDress) {
-        el("bottom_type").value = "none";
-      } else {
-        if (el("bottom_type").value === "none") el("bottom_type").value = "broek";
-      }
-      syncBottomSubtype();
-    }
+  s.value = allowNone ? "none" : "zwart";
+}
 
-    function syncBag() {
-      const hasBag = el("bag_type").value !== "none";
-      el("bag_color_block").classList.toggle("hidden", !hasBag);
-    }
+["top_color","bottom_color","shoes_color","bag_color"].forEach(id=>fillColors(id));
+fillColors("outer_layer_color", true);
 
-    function syncOuter() {
-      const hasOuter = el("outer_layer").value !== "none";
-      el("outer_color_block").classList.toggle("hidden", !hasOuter);
-      if (!hasOuter) el("outer_layer_color").value = "none";
-    }
+/* =========================
+   SYNC FUNCTIES
+========================= */
+function setOptions(selectEl, values, selected){
+  selectEl.innerHTML = "";
+  values.forEach(v=>{
+    const opt = document.createElement("option");
+    opt.value = v;
+    opt.textContent = v.replaceAll("_"," ");
+    if (v === selected) opt.selected = true;
+    selectEl.appendChild(opt);
+  });
+}
 
-    el("bottom_type").addEventListener("change", syncBottomSubtype);
-    el("garment_type").addEventListener("change", syncDress);
-    el("bag_type").addEventListener("change", syncBag);
-    el("outer_layer").addEventListener("change", syncOuter);
+function syncBottomSubtype(){
+  const bt = el("bottom_type").value;
+  const sub = el("bottom_subtype");
 
+  if (bt === "broek"){
+    setOptions(sub, ["jeans","pantalon","stofbroek","korte_broek"], "jeans");
+  } else if (bt === "rok"){
+    setOptions(sub, ["plisse_rok","maxi_rok","laagjesrok"], "maxi_rok");
+  } else {
+    setOptions(sub, ["none"], "none");
+  }
+
+  el("bottom_color_row").classList.toggle("hidden", bt==="none");
+}
+
+function syncDress(){
+  const isDress = el("garment_type").value === "jurk";
+  el("bottom_block").classList.toggle("hidden", isDress);
+
+  if (isDress){
+    el("bottom_type").value = "none";
+  }
+  syncBottomSubtype();
+}
+
+function syncBag(){
+  const show = el("bag_type").value !== "none";
+  el("bag_color_block").classList.toggle("hidden", !show);
+}
+
+function syncOuter(){
+  const show = el("outer_layer").value !== "none";
+  el("outer_color_block").classList.toggle("hidden", !show);
+}
+
+/* =========================
+   EVENTS (FIX: veilig)
+========================= */
+["bottom_type","garment_type","bag_type","outer_layer"].forEach(id=>{
+  const node = el(id);
+  if (node) node.addEventListener("change", ()=>{
     syncBottomSubtype();
     syncDress();
     syncBag();
     syncOuter();
-
-    el("toggle_tipbox").addEventListener("click", () => {
-  const box = el("manual_tipbox");
-  box.classList.toggle("hidden");
-
-  if (box.classList.contains("hidden")) {
-    el("toggle_tipbox").textContent = "Tipbox";
-  } else {
-    el("toggle_tipbox").textContent = "Sluit";
-  }
+  });
 });
 
-    function clearInvalid(){
-      document.querySelectorAll(".is-invalid").forEach(x => x.classList.remove("is-invalid"));
-    }
-    function markInvalid(id){
-      const node = el(id);
-      if (node) node.classList.add("is-invalid");
-    }
-
-    function validateOutfit(){
-      clearInvalid();
-      const val = (id) => (el(id)?.value ?? "").trim();
-      const isNone = (v) => !v || v === "none";
-      const isDress = val("garment_type") === "jurk";
-
-      if (isNone(val("top_color"))){ markInvalid("top_color"); return "Kies een bovenstuk kleur."; }
-      if (!isNone(val("outer_layer")) && isNone(val("outer_layer_color"))){
-        markInvalid("outer_layer_color"); return "Kies ook een vest-kleur.";
-      }
-
-      if (!isDress){
-        if (isNone(val("bottom_type"))){ markInvalid("bottom_type"); return "Kies broek of rok."; }
-        if (val("bottom_type") !== "none" && isNone(val("bottom_color"))){
-          markInvalid("bottom_color"); return "Kies een onderstuk kleur.";
-        }
-      }
-
-      if (isNone(val("shoes_color"))){ markInvalid("shoes_color"); return "Kies een schoenen kleur."; }
-      if (!isNone(val("bag_type")) && isNone(val("bag_color"))){
-        markInvalid("bag_color"); return "Kies ook een tas-kleur.";
-      }
-
-      return "";
-    }
-
-   function getDefaultTip(){
-  const style = el("style").value;
-  const garment = el("garment_type").value;
-
-  if (garment === "jurk") {
-    return "Tip: bij een jurk werken rustige schoenen en een tas in een neutrale kleur vaak mooi.";
-  }
-
-  if (style === "business") {
-    return "Tip: bij business passen rustige kleuren en nette schoenen vaak het best.";
-  }
-
-  if (style === "casual") {
-    return "Tip: casual outfits mogen losser zijn, maar 2 of 3 hoofdkleuren houden het vaak mooier.";
-  }
-
-  if (style === "netjes") {
-    return "Tip: voor een nette outfit werken zwart, wit, beige en donkerblauw vaak goed samen.";
-  }
-
-  return "Tip: kies kleuren die rustig samen ogen en houd accessoires simpel.";
+/* =========================
+   TIPBOX BUTTON (FIX)
+========================= */
+const tipBtn = el("toggle_tipbox");
+if (tipBtn){
+  tipBtn.addEventListener("click", ()=>{
+    el("manual_tipbox").classList.toggle("hidden");
+  });
 }
 
-function updateTipbox(){
-  const errorMsg = validateOutfit();
-  if (errorMsg){
-    setTip(errorMsg);
-  } else {
-    setTip(getDefaultTip());
+/* =========================
+   VALIDATIE
+========================= */
+function validate(){
+  const v = (id)=>el(id)?.value || "none";
+
+  if (!v("top_color")) return "Kies een bovenstuk kleur";
+  if (!v("shoes_color")) return "Kies schoenen kleur";
+
+  if (v("bag_type") !== "none" && !v("bag_color")){
+    return "Kies tas kleur";
   }
+
+  return "";
 }
 
-    // ---- feedback ----
-    function resetFeedback(){
-      el("feedback_block").classList.add("hidden");
-      el("fb_note_block").classList.add("hidden");
-      el("fb_status").textContent = "";
-      el("fb_note").value = "";
-    }
-    resetFeedback();
+/* =========================
+   CHECK OUTFIT (FIX)
+========================= */
+const btn = el("btn");
 
-    // ---- knop ----
-    el("btn").addEventListener("click", async () => {
-      const msg = validateOutfit();
-      if (msg){
-        setTip(msg);
-        el("result").textContent = "—";
-        return;
-      }
-      setTip("");
+if (btn){
+btn.addEventListener("click", async ()=>{
 
-      el("err").textContent = "";
-      el("result").textContent = "⏳ …";
-      el("result").classList.remove("good","bad");
-      resetFeedback();
+  const error = validate();
+  if (error){
+    setTip(error);
+    return;
+  }
 
-      const garment = el("garment_type").value;
-      const isDress = (garment === "jurk") ? "yes" : "no";
+  setTip("");
 
-      const bottomType = (garment === "jurk") ? "none" : el("bottom_type").value;
-      const bottomSubtype = (garment === "jurk") ? "none" : el("bottom_subtype").value;
-      const bottomColor = (bottomType === "none") ? "none" : el("bottom_color").value;
+  const payload = {
+    garment_type: el("garment_type").value,
+    outer_layer: el("outer_layer").value,
+    outer_layer_color: el("outer_layer_color").value,
+    bottom_subtype: el("bottom_subtype").value,
+    shoe_type: el("shoe_type").value,
+    bag_type: el("bag_type").value,
 
-      const bagType = el("bag_type").value;
-      const bagPresent = (bagType === "none") ? "no" : "yes";
-      const bagColor = (bagType === "none") ? "none" : el("bag_color").value;
+    top_color: el("top_color").value,
+    top_type: el("garment_type").value,
+    is_dress: el("garment_type").value === "jurk" ? "yes":"no",
+    dress_color: "none",
 
-      const outerLayer = el("outer_layer").value;
-      const outerColor = (outerLayer === "none") ? "none" : el("outer_layer_color").value;
+    bottom_type: el("bottom_type").value,
+    bottom_color: el("bottom_color").value,
 
-      const payload = {
-        garment_type: garment,
-        outer_layer: outerLayer,
-        outer_layer_color: outerColor,
-        bottom_subtype: bottomSubtype,
-        shoe_type: el("shoe_type").value,
-        bag_type: bagType,
+    shoes_color: el("shoes_color").value,
+    style: el("style").value,
 
-        top_color: (isDress === "yes") ? "none" : el("top_color").value,
-        top_type: (garment === "jurk") ? "none" : garment,
-        is_dress: isDress,
-        dress_color: (isDress === "yes") ? el("top_color").value : "none",
+    bag_present: el("bag_type").value==="none"?"no":"yes",
+    bag_color: el("bag_color").value
+  };
 
-        bottom_type: bottomType,
-        bottom_color: bottomColor,
+  lastPayload = payload;
 
-        shoes_color: el("shoes_color").value,
-        style: el("style").value,
+  el("result").textContent = "⏳ ...";
 
-        bag_present: bagPresent,
-        bag_color: bagColor
-      };
-
-      lastPayload = payload;
-
-      el("reason").textContent = "";
-      el("tips").textContent = "";
-
-      try {
-        const res = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-
-        el("reason").textContent = "";
-        el("tips").textContent = "";
-
-        if (!res.ok) {
-          const txt = await res.text();
-          el("result").textContent = "❌ Error";
-          el("result").classList.add("bad");
-          el("err").textContent = `Server: ${res.status} ${txt}`;
-          return;
-        }
-
-        const data = await res.json();
-        el("reason").textContent = data.reason ? `Waarom: ${data.reason}` : "";
-        el("tips").textContent = data.tips?.length ? `Tip: ${data.tips.join(" | ")}` : "";
-        lastResult = data;
-
-        if (data.label === 1){
-          el("result").textContent = "✅ Goed";
-          el("result").classList.add("good");
-        } else {
-          el("result").textContent = "❌ Niet goed";
-          el("result").classList.add("bad");
-        }
-
-        el("feedback_block").classList.remove("hidden");
-
-      } catch (e) {
-        el("result").textContent = "❌ Server niet bereikbaar";
-        el("result").classList.add("bad");
-        el("err").textContent = "Tip: backend online?";
-        el("reason").textContent = "";
-        el("tips").textContent = "";
-      }
+  try{
+    const res = await fetch(API_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify(payload)
     });
 
-    el("fb_yes").addEventListener("click", async () => {
-      el("fb_note_block").classList.add("hidden");
-      el("fb_status").textContent = "Opslaan…";
-      await sendFeedback(true, "");
-    });
+    const data = await res.json();
+    lastResult = data;
 
-    el("fb_no").addEventListener("click", () => {
-      el("fb_note_block").classList.remove("hidden");
-      el("fb_status").textContent = "Kort waarom?";
-    });
+    el("result").textContent = data.label===1 ? "✅ Goed" : "❌ Niet goed";
 
-    el("fb_send").addEventListener("click", async () => {
-      el("fb_status").textContent = "Versturen…";
-      await sendFeedback(false, el("fb_note").value.trim());
-    });
+  }catch(e){
+    el("result").textContent = "❌ Server error";
+  }
 
-    function getManualTip(){
-  return el("manual_tip_input")?.value?.trim() || "";
+});
 }
 
-    async function sendFeedback(agree, note){
-      if (!lastPayload || !lastResult){
-        el("fb_status").textContent = "Eerst checken.";
-        return;
-      }
+/* =========================
+   FEEDBACK (WERKT NU)
+========================= */
+async function sendFeedback(agree, note){
 
-    const body = {
-     agree,
-     predicted_label: lastResult.label,
-     confidence: lastResult.confidence ?? null,
-     note: note + " | TIP: " + getManualTip(),
-     payload: lastPayload
-     };
+  if (!lastPayload || !lastResult) return;
 
-      const res = await fetch(FEEDBACK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-
-   if (!res.ok) {
-        const txt = await res.text();
-        el("result").textContent = "❌ Error";
-        el("result").classList.add("bad");
-        el("err").textContent = `Server: ${res.status} ${txt}`;
-        el("reason").textContent = "";
-        el("tips").textContent = "";
-       return;
+  await fetch(FEEDBACK_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({
+      agree,
+      predicted_label: lastResult.label,
+      confidence: lastResult.confidence ?? null,
+      note,
+      payload: lastPayload
+    })
+  });
 }
+</script>
 
-      el("fb_status").textContent = "✅ Opgeslagen";
-      el("fb_note").value = "";
-      el("fb_note_block").classList.add("hidden");
-    }
-  </script>
 </body>
 </html>

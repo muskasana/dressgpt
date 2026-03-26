@@ -490,6 +490,7 @@ function validate(){
 ========================= */
 const btn = el("btn");
 
+
 if (btn){
 btn.addEventListener("click", async ()=>{
 
@@ -536,6 +537,7 @@ btn.addEventListener("click", async ()=>{
     });
 
     const data = await res.json();
+    console.log("predict data:", data);
     lastResult = data;
 
     el("result").textContent = data.label===1 ? "✅ Goed" : "❌ Niet goed";
@@ -543,6 +545,13 @@ btn.addEventListener("click", async ()=>{
   }catch(e){
     el("result").textContent = "❌ Server error";
   }
+
+if (typeof data.label === "undefined") {
+  el("result").textContent = "❌ Geen label van backend";
+  el("result").classList.add("bad");
+  el("err").textContent = JSON.stringify(data);
+  return;
+}
 
 });
 }
@@ -566,6 +575,8 @@ async function sendFeedback(agree, note){
     })
   });
 }
+
+console.log("FULL RESPONSE:", data);
 </script>
 
 </body>

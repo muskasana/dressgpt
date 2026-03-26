@@ -96,7 +96,15 @@ def predict(outfit: Outfit):
         return {"error": "Model not found. Run train_model.py first."}
 
     data = outfit.model_dump()
-    df = pd.DataFrame([data])[FEATURES]
+
+    df = pd.DataFrame([data])
+
+    for f in FEATURES:
+        if f not in df.columns:
+            df[f] = "none"
+
+    df = df[FEATURES]
+
     pred = int(model.predict(df)[0])
 
     conf = None

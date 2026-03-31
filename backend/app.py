@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import os
 from openai import OpenAI
 from pathlib import Path
 import csv
@@ -8,7 +9,7 @@ import json
 from datetime import datetime
 from typing import Any, Optional
 
-client = OpenAI(api_key="sk-JOUW_KEY_HIER")
+client = OpenAI(api_key="sk-mhs")
 
 app = FastAPI()
 

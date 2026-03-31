@@ -3,3 +3,4 @@ uvicorn
 pandas
 joblib
 scikit-learn
+openai

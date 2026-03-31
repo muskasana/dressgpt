@@ -1,13 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import joblib
-import pandas as pd
+from openai import OpenAI
 from pathlib import Path
 import csv
 import json
 from datetime import datetime
 from typing import Any, Optional
+
+client = OpenAI(api_key="sk-JOUW_KEY_HIER")
 
 app = FastAPI()
 
@@ -18,16 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-MODEL_PATH = Path(__file__).parent / "model.joblib"
 FEEDBACK_PATH = Path(__file__).parent / "feedback.csv"
-
-model = joblib.load(MODEL_PATH) if MODEL_PATH.exists() else None
-
-FEATURES = [
-    "top_color", "top_type", "is_dress", "dress_color",
-    "bottom_type", "bottom_color", "shoes_color", "style",
-    "bag_present", "bag_color"
-]
 
 
 class Outfit(BaseModel):
@@ -59,66 +51,65 @@ class Feedback(BaseModel):
     payload: dict[str, Any]
 
 
-def build_reason_and_tips(data: dict, pred: int):
-    tips = []
-
-    if pred == 1:
-        reason = "Deze outfit lijkt goed bij elkaar te passen."
-    else:
-        reason = "Deze outfit oogt minder in balans."
-
-    if data.get("style") == "business":
-        tips.append("Bij business werken rustige kleuren en nette combinaties vaak beter.")
-
-    if data.get("bag_present") == "yes" and data.get("bag_color") == data.get("shoes_color"):
-        tips.append("Tas en schoenen in dezelfde kleur geven vaak extra rust.")
-
-    if data.get("is_dress") == "yes":
-        tips.append("Bij een jurk werken rustige accessoires vaak mooi.")
-
-    if not tips:
-        if pred == 1:
-            tips.append("De kleuren voelen vrij samenhangend.")
-        else:
-            tips.append("Probeer minder opvallende kleuren tegelijk te combineren.")
-
-    return reason, tips
-
-
 @app.get("/")
 def home():
-    return {"status": "ok", "model_loaded": model is not None}
+    return {"status": "ok", "mode": "chatgpt"}
 
 
 @app.post("/predict")
 def predict(outfit: Outfit):
-    if model is None:
-        return {"error": "Model not found. Run train_model.py first."}
-
     data = outfit.model_dump()
 
-    df = pd.DataFrame([data])
+    prompt = f"""
+Je bent DressGPT, een mode-AI.
 
-    for f in FEATURES:
-        if f not in df.columns:
-            df[f] = "none"
+Beoordeel deze outfit op stijl en combinatie.
+Geef antwoord als JSON met exact deze velden:
+- label (1 = goed, 0 = niet goed)
+- confidence (getal tussen 0 en 1)
+- reason (korte uitleg in het Nederlands)
+- tips (lijst van 1 tot 3 korte tips in het Nederlands)
 
-    df = df[FEATURES]
+Outfit:
+- stijl: {data.get("style")}
+- bovenstuk type: {data.get("top_type")}
+- bovenstuk kleur: {data.get("top_color")}
+- jurk: {data.get("is_dress")}
+- jurk kleur: {data.get("dress_color")}
+- onderstuk type: {data.get("bottom_type")}
+- onderstuk kleur: {data.get("bottom_color")}
+- schoenen kleur: {data.get("shoes_color")}
+- schoen type: {data.get("shoe_type")}
+- vest/jasje: {data.get("outer_layer")}
+- vest kleur: {data.get("outer_layer_color")}
+- tas aanwezig: {data.get("bag_present")}
+- tas type: {data.get("bag_type")}
+- tas kleur: {data.get("bag_color")}
 
-    pred = int(model.predict(df)[0])
+Regels:
+- let goed op of de outfit past bij de gekozen stijl
+- geef alleen JSON terug
+- geen extra tekst buiten de JSON
+"""
 
-    conf = None
-    if hasattr(model, "predict_proba"):
-        conf = float(model.predict_proba(df).max())
+    response = client.responses.create(
+        model="gpt-4.1-mini",
+        input=prompt
+    )
 
-    reason, tips = build_reason_and_tips(data, pred)
+    text = response.output_text
 
-    return {
-        "label": pred,
-        "confidence": conf,
-        "reason": reason,
-        "tips": tips
-    }
+    try:
+        result = json.loads(text)
+    except Exception:
+        return {
+            "label": 0,
+            "confidence": 0.0,
+            "reason": "De AI gaf geen geldig antwoord terug.",
+            "tips": ["Probeer opnieuw."]
+        }
+
+    return result
 
 
 @app.post("/feedback")

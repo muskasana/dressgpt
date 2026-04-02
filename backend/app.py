@@ -9,7 +9,7 @@ import json
 from datetime import datetime
 from typing import Any, Optional
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key=os.getenv("sk-mhs"))
 
 app = FastAPI()
 

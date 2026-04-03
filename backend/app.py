@@ -158,6 +158,29 @@ Regels:
 - geen extra tekst buiten de JSON
 - wit, zwart-wit en zwart schoenen kunnen bij bijna alles
 
+KLEDINGSTUK REGELS:
+
+NETTE STUKKEN:
+- blouse, overhemd, colbert
+- passen goed bij netjes en business
+
+CASUAL STUKKEN:
+- t-shirt, hoodie, jeans
+- passen bij casual, soms bij netjes als combinatie rustig is
+
+TUSSENSTUKKEN:
+- vesten (zoals opengewerkt vest)
+- kunnen casual OF netjes zijn afhankelijk van kleuren en combinatie
+
+SCHOENEN:
+- sneakers = casual, maar kunnen bij netjes als outfit rustig is
+- nette schoenen = goed voor business en netjes
+- hakken = netjes/chique
+
+BELANGRIJK:
+- kijk niet alleen naar 1 kledingstuk
+- beoordeel de hele combinatie
+
 VOORBEELDEN:
 
 Voorbeeld 1:

@@ -145,6 +145,12 @@ LET OP:
 - felle kleuren moeten balans hebben
 - neutrale kleuren zorgen voor rust
 
+BELANGRIJK:
+- keur outfits niet te streng af
+- simpele en rustige combinaties zijn vaak goed
+- als kleuren bij elkaar passen en niet botsen → goed
+- sneakers mogen bij netjes als de outfit rustig is
+
 VOORBEELDEN:
 
 Voorbeeld 1:

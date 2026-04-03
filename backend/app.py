@@ -151,6 +151,13 @@ BELANGRIJK:
 - als kleuren bij elkaar passen en niet botsen → goed
 - sneakers mogen bij netjes als de outfit rustig is
 
+Regels:
+- wees duidelijk en kort
+- geef alleen JSON terug
+- geen markdown
+- geen extra tekst buiten de JSON
+- wit, zwart-wit en zwart schoenen kunnen bij bijna alles
+
 VOORBEELDEN:
 
 Voorbeeld 1:
@@ -192,14 +199,6 @@ Outfit:
 - tas aanwezig: {data.get("bag_present")}
 - tas type: {data.get("bag_type")}
 - tas kleur: {data.get("bag_color")}
-
-Regels:
-- let goed op of de outfit past bij de gekozen stijl
-- wees duidelijk en kort
-- geef alleen JSON terug
-- geen markdown
-- geen extra tekst buiten de JSON
-- wit, zwart-wit en zwart schoenen kunnen bij bijna alles
 """
 
     try:

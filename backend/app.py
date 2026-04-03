@@ -68,7 +68,7 @@ def predict(outfit: Outfit):
             "label": 0,
             "confidence": 0.0,
             "reason": "Er is geen OpenAI API key gevonden op de server.",
-            "tips": ["Zet OPENAI_API_KEY in Render Environment."],
+            "tips": ["Zet sk-mhs in Render Environment."],
         }
 
     data = outfit.model_dump()
@@ -84,6 +84,92 @@ Geef alleen geldig JSON terug met exact deze velden:
   "reason": "korte uitleg in het Nederlands",
   "tips": ["tip 1", "tip 2", "tip 3"]
 }}
+
+Stijlregels:
+
+CASUAL:
+- los, makkelijk, sneakers, jeans
+- rugtas of geen tas
+
+BUSINESS:
+- professioneel, rustig
+- colbert, blouse, pantalon
+- nette schoenen, werktas
+- geen casual kleding
+
+CHIQUE:
+- elegant, rustig
+- jurken, rokken, blouses
+- geen truien
+
+SPORTY:
+- comfortabel, actief
+- sneakers, sportkleding
+- geen hakken of rokken
+
+PREPPY:
+- netjes + speels
+- blouse, rok, nette kleuren
+
+NETJES:
+- simpel, rustig
+- niet te extreem
+
+NETJES:
+- rustige kleuren zoals donkerblauw, zwart, wit zijn goed
+- simpele combinaties zijn goed
+- sneakers kunnen bij nette outfits als de kleuren rustig zijn
+- t-shirt + vest + jeans kan netjes zijn als kleuren matchen
+
+BELANGRIJK:
+- donkerblauw is een rustige en nette kleur
+- wit combineert goed met donkere kleuren
+- keur simpele, rustige outfits niet te snel af
+
+KLASSIEKE COMBINATIES (VEILIG):
+- zwart-wit + zwart/wit = altijd goed
+- blauw-wit + blauw/wit = fris en rustig
+
+NEUTRAAL + FEL (VAAK GOED):
+- zwart + rood = sterk maar kan goed
+- wit + roze = zacht en fris
+- blauw + roze = speels maar vaak oké
+
+MULTICOLOR:
+- meerdere kleuren in één stuk of outfit
+- moet gecombineerd worden met rustige kleuren
+- te veel verschillende felle kleuren samen = vaak rommelig
+
+LET OP:
+- meer dan 3 duidelijke kleuren = vaak te druk
+- felle kleuren moeten balans hebben
+- neutrale kleuren zorgen voor rust
+
+VOORBEELDEN:
+
+Voorbeeld 1:
+stijl: netjes
+bovenstuk: donkerblauwe blouse
+onderstuk: zwarte jeans
+schoenen: witte sneakers
+uitkomst: goed
+reden: donkerblauw en zwart zijn rustige kleuren, en witte sneakers kunnen bij netjes nog prima als de outfit simpel blijft
+
+Voorbeeld 2:
+stijl: business
+bovenstuk: donkerblauw overhemd
+onderstuk: zwarte pantalon
+schoenen: zwarte veterschoenen
+uitkomst: goed
+reden: dit is een rustige en professionele combinatie
+
+Voorbeeld 3:
+stijl: casual
+bovenstuk: donkerblauwe trui
+onderstuk: grijze jeans
+schoenen: witte sneakers
+uitkomst: goed
+reden: donkerblauw en grijs combineren rustig, en witte sneakers maken het fris
 
 Outfit:
 - stijl: {data.get("style")}
@@ -107,6 +193,7 @@ Regels:
 - geef alleen JSON terug
 - geen markdown
 - geen extra tekst buiten de JSON
+- wit, zwart-wit en zwart schoenen kunnen bij bijna alles
 """
 
     try:

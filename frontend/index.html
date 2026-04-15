@@ -170,7 +170,7 @@
       <div id="manual_tipbox" class="manual-tipbox hidden">
       <input id="manual_tip_input" type="text" placeholder="Typ je tip..." />
        </div>
-      <span class="pill">API: dressgpt.onrender.com</span>
+      <span class="pill">API: http://127.0.0.1:8000</span>
       </div>
     </header>
 
@@ -332,7 +332,7 @@
   </div>
 
 <script>
-const API_BASE = "https://dressgpt.onrender.com";
+const API_BASE = "http://127.0.0.1:8000";
 const API_URL = `${API_BASE}/predict`;
 const FEEDBACK_URL = `${API_BASE}/feedback`;
 const el = (id) => document.getElementById(id);
@@ -399,9 +399,7 @@ function fillColors(id, allowNone=false){
 ["top_color","bottom_color","shoes_color","bag_color"].forEach(id=>fillColors(id));
 fillColors("outer_layer_color", true);
 
-/* =========================
-   SYNC FUNCTIES
-========================= */
+
 function setOptions(selectEl, values, selected){
   selectEl.innerHTML = "";
   values.forEach(v=>{
@@ -448,9 +446,6 @@ function syncOuter(){
   el("outer_color_block").classList.toggle("hidden", !show);
 }
 
-/* =========================
-   EVENTS (FIX: veilig)
-========================= */
 ["bottom_type","garment_type","bag_type","outer_layer"].forEach(id=>{
   const node = el(id);
   if (node) node.addEventListener("change", ()=>{
@@ -461,9 +456,7 @@ function syncOuter(){
   });
 });
 
-/* =========================
-   TIPBOX BUTTON (FIX)
-========================= */
+
 const tipBtn = el("toggle_tipbox");
 if (tipBtn){
   tipBtn.addEventListener("click", ()=>{
@@ -471,9 +464,7 @@ if (tipBtn){
   });
 }
 
-/* =========================
-   VALIDATIE
-========================= */
+
 function validate(){
   const v = (id)=>el(id)?.value || "none";
 
@@ -487,9 +478,6 @@ function validate(){
   return "";
 }
 
-/* =========================
-   CHECK OUTFIT (FIX)
-========================= */
 const btn = el("btn");
 
 
@@ -529,38 +517,38 @@ btn.addEventListener("click", async ()=>{
 
   lastPayload = payload;
 
-  el("result").textContent = "⏳ ...";
+  el("result").textContent = "Aan het denken...";
 
   try{
     const res = await fetch(API_URL,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body: JSON.stringify(payload)
+
     });
 
     const data = await res.json();
     console.log("predict data:", data);
     lastResult = data;
 
-    el("result").textContent = data.label===1 ? "✅ Goed" : "❌ Niet goed";
+    if (typeof data.label === "undefined") {
+      el("result").textContent = "❌ Geen label van backend";
+      el("result").classList.add("bad");
+      el("err").textContent = JSON.stringify(data);
+      return;
+    }
 
-  }catch(e){
-    el("result").textContent = "❌ Server error";
-  }
+el("result").textContent = data.label===1 ? "✅ Goed" : "❌ Niet goed";
+el("reason").textContent = data.reason || "";
+el("tips").innerHTML = (data.tips || []).map(t => "• " + t).join("<br>");
 
-if (typeof data.label === "undefined") {
-  el("result").textContent = "❌ Geen label van backend";
-  el("result").classList.add("bad");
-  el("err").textContent = JSON.stringify(data);
-  return;
+} catch(e){
+  el("result").textContent = "❌ Server error";
 }
 
 });
 }
 
-/* =========================
-   FEEDBACK (WERKT NU)
-========================= */
 async function sendFeedback(agree, note){
 
   if (!lastPayload || !lastResult) return;
@@ -577,8 +565,6 @@ async function sendFeedback(agree, note){
     })
   });
 }
-
-console.log("FULL RESPONSE:", data);
 </script>
 
 </body>

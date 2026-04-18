@@ -112,49 +112,6 @@
       header{ flex-direction: column; align-items:flex-start; }
       .grid2, .fb-row{ grid-template-columns: 1fr; }
     }
-
-    /* Tipbox + invalid */
-    .tipbox{
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      z-index: 9999;
-      max-width: 340px;
-      padding: 10px 12px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,.16);
-      background: rgba(16,22,42,.86);
-      backdrop-filter: blur(6px);
-      color: #eef2ff;
-      font-size: 13px;
-      font-weight: 850;
-    }
-
-    .manual-tipbox{
-  position: fixed;
-  top: 70px;
-  right: 16px;
-  z-index: 9999;
-
-  width: 260px;
-  padding: 12px;
-
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.16);
-  background: rgba(16,22,42,.95);
-  backdrop-filter: blur(6px);
-
-  box-shadow: 0 10px 25px rgba(0,0,0,.3);
-}
-
-.manual-tipbox input{
-  width: 100%;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,.2);
-  background: rgba(0,0,0,.2);
-  color: white;
-}
   </style>
 </head>
 
@@ -164,12 +121,6 @@
       <div>
         <h1>DressGPT</h1>
         <div class="tag">Versie 3 — één pagina + tips als er iets mist</div>
-      </div>
-      <div style="display:flex; gap:10px; align-items:center;">
-      <button id="toggle_tipbox" class="pill" type="button">Tipbox</button>
-      <div id="manual_tipbox" class="manual-tipbox hidden">
-      <input id="manual_tip_input" type="text" placeholder="Typ je tip..." />
-       </div>
       <span class="pill">API: http://127.0.0.1:8000</span>
       </div>
     </header>
@@ -312,6 +263,7 @@
       <div class="small" id="err"></div>
       <div class="small" id="reason"></div>
       <div class="small" id="tips"></div>
+      <div class="small" id="vibe"></div>
 
       <!-- FEEDBACK -->
       <div class="feedback hidden" id="feedback_block">
@@ -340,27 +292,6 @@ const el = (id) => document.getElementById(id);
 let lastPayload = null;
 let lastResult = null;
 
-/* =========================
-   🔥 BELANGRIJKE FIX
-========================= */
-function setTip(text){
-  const box = el("manual_tipbox");
-  const input = el("manual_tip_input");
-
-  if (!box || !input) return;
-
-  if (!text){
-    box.classList.add("hidden");
-    return;
-  }
-
-  box.classList.remove("hidden");
-  input.value = text;
-}
-
-/* =========================
-   KLEUREN
-========================= */
 const COLORS = [
   "zwart","wit","grijs","bruin",
   "rood","lichtrood","donkerrood",
@@ -456,15 +387,6 @@ function syncOuter(){
   });
 });
 
-
-const tipBtn = el("toggle_tipbox");
-if (tipBtn){
-  tipBtn.addEventListener("click", ()=>{
-    el("manual_tipbox").classList.toggle("hidden");
-  });
-}
-
-
 function validate(){
   const v = (id)=>el(id)?.value || "none";
 
@@ -541,6 +463,7 @@ btn.addEventListener("click", async ()=>{
 el("result").textContent = data.label===1 ? "✅ Goed" : "❌ Niet goed";
 el("reason").textContent = data.reason || "";
 el("tips").innerHTML = (data.tips || []).map(t => "• " + t).join("<br>");
+el("vibe").textContent = data.vibe ? "Vibe: " + data.vibe : "";
 
 } catch(e){
   el("result").textContent = "❌ Server error";

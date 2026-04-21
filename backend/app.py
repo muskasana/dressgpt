@@ -1,13 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from openai import OpenAI
 from pathlib import Path
 import csv
 import json
 from datetime import datetime
 from typing import Any, Optional
-import os
 
 app = FastAPI()
 app.add_middleware(
@@ -169,10 +167,10 @@ def rule_based_outfit_check(data: dict) -> dict:
     used_types = []
 
     for _, info in color_info.items():
-        if info["color"] != "none":
-            used_colors.append(info["color"])
-        if info["type"] != "none":
-            used_types.append(info["type"])
+      if info["color"] != "none":
+          used_colors.append(info["color"])
+      if info["type"] != "none":
+          used_types.append(info["type"])
 
     unique_colors = set(used_colors)
     non_neutral_types = {t for t in used_types if t != "neutraal"}
@@ -277,8 +275,6 @@ def rule_based_outfit_check(data: dict) -> dict:
         score -= 1
         reasons.append("Een hoodie voelt vaak sportiever dan preppy.")
 
-    # -------- VIBE MATCH --------
-
     if actual_vibe == "mixed":
         reasons.append("De outfit heeft een gemixte vibe in plaats van één duidelijke richting.")
         if style in {"casual", "netjes", "sporty"}:
@@ -331,168 +327,32 @@ def rule_based_outfit_check(data: dict) -> dict:
         "vibe": actual_vibe,
     }
 
-    used_colors = []
-    used_types = []
+class Outfit(BaseModel):
+    garment_type: str = "tshirt"
+    outer_layer: str = "none"
+    outer_layer_color: str = "none"
+    bottom_subtype: str = "none"
+    shoe_type: str = "sneakers"
+    bag_type: str = "none"
 
-    for part, info in color_info.items():
-        if info["color"] != "none":
-            used_colors.append(info["color"])
-        if info["type"] != "none":
-            used_types.append(info["type"])
+    top_color: str
+    bottom_type: str
+    bottom_color: str
+    shoes_color: str
+    style: str
 
-    unique_colors = set(used_colors)
-    non_neutral_types = {t for t in used_types if t != "neutraal"}
+    top_type: str = "shirt"
+    is_dress: str = "no"
+    dress_color: str = "none"
+    bag_present: str = "no"
+    bag_color: str = "none"
 
-    score = 0
-    reasons = []
-    tips = []
+@app.get("/")
+def home():
+    return {"status": "ok", "mode": "chatgpt"}
 
-    # -------- KLEURREGELS --------
 
-    if len(unique_colors) <= 3:
-        score += 2
-        reasons.append("De outfit gebruikt niet te veel kleuren en oogt daardoor meer in balans.")
-    else:
-        score -= 2
-        reasons.append("Er zitten veel verschillende kleuren in de outfit.")
-        tips.append("Kies wat minder verschillende kleuren voor meer rust.")
-
-    if len(non_neutral_types) <= 2:
-        score += 1
-        reasons.append("De kleurtypes blijven redelijk consistent.")
-    else:
-        score -= 2
-        reasons.append("De outfit mixt te veel verschillende kleurtypes.")
-        tips.append("Probeer het bij maximaal twee kleurtypes te houden.")
-
-    colorful_count = used_types.count("kleurrijk")
-    if colorful_count == 1:
-        score += 1
-        reasons.append("Er is één kleurrijk accent, wat de outfit levendig kan maken.")
-    elif colorful_count >= 2:
-        score -= 2
-        reasons.append("Er zijn meerdere kleurrijke onderdelen, waardoor de outfit sneller druk oogt.")
-        tips.append("Gebruik liever één kleurrijk accent.")
-
-    if (
-        color_info["top"]["type"] == "neutraal"
-        and color_info["bottom"]["type"] == "neutraal"
-    ):
-        score += 1
-        reasons.append("Het bovenstuk en onderstuk vormen een rustige neutrale basis.")
-
-    if all(t in {"neutraal", "subtiel"} for t in used_types):
-        score += 1
-        reasons.append("De kleuren zijn rustig en subtiel gecombineerd.")
-
-    if (
-        color_info["outer"]["type"] == "kleurrijk"
-        and color_info["shoes"]["type"] == "kleurrijk"
-    ):
-        score -= 1
-        reasons.append("De buitenlaag en schoenen trekken allebei veel aandacht.")
-        tips.append("Maak de jas of schoenen rustiger voor meer balans.")
-
-    # -------- STIJLREGELS --------
-
-    if style == "netjes" and outer_layer == "bomberjack":
-        score -= 3
-        reasons.append("Een bomberjack past meestal beter bij casual of sporty dan bij netjes.")
-        tips.append("Kies bij netjes liever geen bomberjack.")
-
-    if style == "netjes" and outer_layer == "spijkerjasje":
-        score -= 2
-        reasons.append("Een spijkerjasje maakt de outfit sneller casual dan netjes.")
-        tips.append("Kies een rustigere buitenlaag als je voor netjes gaat.")
-
-    if style == "netjes" and outer_layer == "leren_jasje":
-        score -= 2
-        reasons.append("Een leren jasje geeft eerder een stoerdere dan nette uitstraling.")
-
-    if style == "netjes" and outer_layer == "opengewerkt vest":
-        score += 1
-        reasons.append("Een opengewerkt vest kan goed werken bij netjes als de rest rustig blijft.")
-
-    if style == "netjes" and shoe_type == "sneakers":
-        score += 1
-        reasons.append("Sneakers kunnen bij netjes als de rest van de outfit rustig en verzorgd is.")
-
-    if style == "casual" and outer_layer == "colbert":
-        score -= 2
-        reasons.append("Een colbert maakt de outfit netter dan casual.")
-        tips.append("Laat het colbert weg of kies een casualere buitenlaag.")
-
-    if style == "business" and shoe_type == "sneakers":
-        score -= 2
-        reasons.append("Sneakers passen meestal minder goed bij business.")
-        tips.append("Kies bij business liever een nettere schoen.")
-
-    if style == "business" and outer_layer in {"bomberjack", "spijkerjasje", "leren_jasje"}:
-        score -= 3
-        reasons.append("Deze buitenlaag past minder goed bij een zakelijke stijl.")
-
-    if style == "sporty" and shoe_type not in {"sneakers", "sportschoenen"}:
-        score -= 2
-        reasons.append("De schoenkeuze voelt minder sporty aan dan de gekozen stijl.")
-
-    if style == "chique" and garment_type == "hoodie":
-        score -= 3
-        reasons.append("Een hoodie past meestal niet bij een chique stijl.")
-
-    if style == "preppy" and garment_type == "hoodie":
-        score -= 1
-        reasons.append("Een hoodie voelt vaak sportiever dan preppy.")
-
-    # -------- VIBE MATCH --------
-
-    if actual_vibe == "mixed":
-        reasons.append("De outfit heeft een gemixte vibe in plaats van één duidelijke richting.")
-        if style in {"casual", "netjes", "sporty"}:
-            score -= 1
-            tips.append("Maak de outfit iets duidelijker in één stijlrichting.")
-
-    elif style == actual_vibe:
-        score += 2
-        reasons.append(f"De gekozen stijl past goed bij de echte vibe van de outfit: {actual_vibe}.")
-
-    elif style == "netjes" and actual_vibe == "casual" and shoe_type == "sneakers":
-        score -= 1
-        reasons.append("De outfit oogt iets meer casual dan netjes, vooral door de combinatie als geheel.")
-
-    elif style == "casual" and actual_vibe == "sporty":
-        reasons.append("De outfit zit tussen casual en sporty in.")
-
-    else:
-        score -= 2
-        reasons.append(f"De gekozen stijl ({style}) past niet goed bij de echte vibe van de outfit ({actual_vibe}).")
-        tips.append(f"Maak de outfit meer {style} of kies een stijl die beter past bij de combinatie.")
-
-    # -------- EINDOORDEEL --------
-
-    label = 1 if score >= 1 else 0
-
-    confidence = 0.75
-    if score >= 4:
-        confidence = 0.9
-    elif score >= 1:
-        confidence = 0.8
-    elif score == 0:
-        confidence = 0.65
-    else:
-        confidence = 0.85
-
-    final_reason = " ".join(reasons[:3]) if reasons else "De outfit is beoordeeld op kleur, stijl en balans."
-    final_tips = tips[:2]
-
-    if not final_tips and label == 0:
-        final_tips = ["Probeer minder stijlen of kleuren tegelijk te combineren."]
-    elif not final_tips and label == 1:
-        final_tips = ["De outfit is mooi in balans."]
-
-    return {
-        "label": label,
-        "confidence": confidence,
-        "reason": final_reason,
-        "tips": final_tips,
-        "vibe": actual_vibe,
-    }
+@app.post("/predict")
+def predict(outfit: Outfit):
+    data = outfit.model_dump()
+    return rule_based_outfit_check(data)

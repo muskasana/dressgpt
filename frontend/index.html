@@ -289,6 +289,10 @@ const API_URL = `${API_BASE}/predict`;
 const FEEDBACK_URL = `${API_BASE}/feedback`;
 const el = (id) => document.getElementById(id);
 
+function setTip(message){
+  el("err").textContent = message || "Er gaat iets mis, probeer het later opnieuw.";
+}
+
 let lastPayload = null;
 let lastResult = null;
 

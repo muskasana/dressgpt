@@ -59,8 +59,9 @@ def detect_outfit_vibe(data: dict) -> str:
 
     # TOP
     if garment_type == "hoodie":
-        scores["casual"] += 2
+        scores["casual"] += 3
         scores["sporty"] += 1
+        scores["netjes"] -= 1
     elif garment_type == "tshirt":
         scores["casual"] += 2
     elif garment_type == "longsleeve":
@@ -227,10 +228,11 @@ def rule_based_outfit_check(data: dict) -> dict:
 
     # -------- STIJLREGELS --------
 
-    if style == "netjes" and outer_layer == "bomberjack":
-        score -= 3
-        reasons.append("Een bomberjack past meestal beter bij casual of sporty dan bij netjes.")
-        tips.append("Kies bij netjes liever geen bomberjack.")
+    if style == "netjes" and garment_type == "hoodie":
+       score -= 3
+       reasons.append("Een hoodie maakt een outfit meestal minder netjes.")
+       tips.append("Kies voor netjes liever een blouse, overhemd of een fijner bovenstuk.")
+
 
     if style == "netjes" and outer_layer == "spijkerjasje":
         score -= 2
@@ -311,7 +313,13 @@ def rule_based_outfit_check(data: dict) -> dict:
     else:
         confidence = 0.85
 
-    final_reason = " ".join(reasons[:3]) if reasons else "De outfit is beoordeeld op kleur, stijl en balans."
+    vibe_reason = next((r for r in reasons if "vibe" in r.lower()), None)
+
+    if vibe_reason:
+        final_reason = vibe_reason
+    else:
+        final_reason = " ".join(reasons[:2]) if reasons else "De outfit is beoordeeld op kleur, stijl en balans."
+
     final_tips = tips[:2]
 
     if not final_tips and label == 0:
@@ -356,3 +364,42 @@ def home():
 def predict(outfit: Outfit):
     data = outfit.model_dump()
     return rule_based_outfit_check(data)
+
+FEEDBACK_PATH = Path(__file__).parent / "feedback.csv"
+
+class Feedback(BaseModel):
+    agree: bool
+    predicted_label: int
+    confidence: Optional[float] = None
+    note: str = ""
+    payload: dict[str, Any]
+
+FEEDBACK_PATH = Path(__file__).parent / "feedback.csv"
+
+class Feedback(BaseModel):
+    agree: bool
+    predicted_label: int
+    confidence: Optional[float] = None
+    note: str = ""
+    payload: dict[str, Any]
+
+@app.post("/feedback")
+def feedback(item: Feedback):
+    row = {
+        "ts": datetime.now().isoformat(timespec="seconds"),
+        "agree": int(item.agree),
+        "predicted_label": int(item.predicted_label),
+        "confidence": "" if item.confidence is None else float(item.confidence),
+        "note": item.note.strip(),
+        "payload_json": json.dumps(item.payload, ensure_ascii=False),
+    }
+
+    write_header = not FEEDBACK_PATH.exists()
+
+    with open(FEEDBACK_PATH, "a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=row.keys())
+        if write_header:
+            writer.writeheader()
+        writer.writerow(row)
+
+    return {"status": "saved"}

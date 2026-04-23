@@ -290,7 +290,7 @@ const FEEDBACK_URL = `${API_BASE}/feedback`;
 const el = (id) => document.getElementById(id);
 
 function setTip(message){
-  el("err").textContent = message || "Er gaat iets mis, probeer het later opnieuw.";
+  el("err").textContent = message || "";
 }
 
 let lastPayload = null;

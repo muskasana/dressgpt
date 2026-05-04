@@ -141,6 +141,7 @@ def rule_based_outfit_check(data: dict) -> dict:
     bottom_type = (data.get("bottom_type") or "").strip().lower()
     bottom_subtype = (data.get("bottom_subtype") or "").strip().lower()
     shoe_type = (data.get("shoe_type") or "").strip().lower()
+    shoes_color = (data.get("shoes_color") or "").strip().lower()
     actual_vibe = detect_outfit_vibe(data)
 
     color_info = {
@@ -227,6 +228,7 @@ def rule_based_outfit_check(data: dict) -> dict:
         tips.append("Maak de jas of schoenen rustiger voor meer balans.")
 
     # -------- STIJLREGELS --------
+    
 
     if style == "netjes" and garment_type == "hoodie":
        score -= 3
@@ -283,6 +285,25 @@ def rule_based_outfit_check(data: dict) -> dict:
             score -= 1
             tips.append("Maak de outfit iets duidelijker in één stijlrichting.")
 
+    if shoe_type == "sneakers":
+        if style in {"casual", "sporty", "netjes"}:
+            score += 1
+            reasons.append("Sneakers kunnen goed werken bij deze stijl als de rest van de outfit klopt.")
+
+    if style in {"business", "chique"}:
+        score -= 1
+        reasons.append("Sneakers kunnen bij deze stijl, maar alleen als ze rustig en verzorgd zijn.")
+        tips.append("Kies bij business of chique liever rustige sneakers, zoals wit of zwart.")
+
+    if shoes_color in {"rood", "lichtrood", "donkerrood", "multicolor"} and style in {"netjes", "business", "chique"}:
+        score -= 2
+        reasons.append("De sneakers vallen sterk op voor deze nette stijl.")
+        tips.append("Kies rustigere sneakers, zoals wit, zwart of grijs.")
+
+    if style == "netjes" and garment_type == "hoodie":
+        score -= 2
+        reasons.append("Sneakers met een hoodie maken de outfit extra casual.")
+
     elif style == actual_vibe:
         score += 2
         reasons.append(f"De gekozen stijl past goed bij de echte vibe van de outfit: {actual_vibe}.")
@@ -298,7 +319,7 @@ def rule_based_outfit_check(data: dict) -> dict:
         score -= 2
         reasons.append(f"De gekozen stijl ({style}) past niet goed bij de echte vibe van de outfit ({actual_vibe}).")
         tips.append(f"Maak de outfit meer {style} of kies een stijl die beter past bij de combinatie.")
-
+   
     # -------- EINDOORDEEL --------
 
     label = 1 if score >= 1 else 0

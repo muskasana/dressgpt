@@ -303,6 +303,28 @@ def rule_based_outfit_check(data: dict) -> dict:
     if style == "netjes" and garment_type == "hoodie":
         score -= 2
         reasons.append("Sneakers met een hoodie maken de outfit extra casual.")
+    
+    if outer_layer == "colbert" and shoe_type == "sportschoenen":
+        score -= 3
+        reasons.append("Sportschoenen botsen meestal met de nette uitstraling van een colbert.")
+        tips.append("Kies bij een colbert liever rustige sneakers, hakken of veterschoenen.")
+
+    if outer_layer == "colbert" and bottom_subtype == "korte_broek":
+        score -= 3
+        reasons.append("Een colbert met een korte broek voelt vaak minder in balans.")
+        tips.append("Combineer een colbert liever met een pantalon, jeans of stofbroek.")
+    
+    if bottom_subtype == "jeans" and style in {"business", "chique"}:
+        score -= 1
+        reasons.append("Jeans maken de outfit iets minder formeel.")
+
+    if bottom_subtype == "jeans" and outer_layer == "colbert":
+        score += 1
+        reasons.append("Jeans kunnen goed werken met een colbert als de outfit rustig blijft.")
+
+    if garment_type == "hoodie" and outer_layer in {"colbert", "opengewerkt vest"}:
+        score -= 4
+        reasons.append("Een hoodie botst met de nette uitstraling van deze buitenlaag.")
 
     elif style == actual_vibe:
         score += 2

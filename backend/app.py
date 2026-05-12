@@ -290,19 +290,19 @@ def rule_based_outfit_check(data: dict) -> dict:
             score += 1
             reasons.append("Sneakers kunnen goed werken bij deze stijl als de rest van de outfit klopt.")
 
-    if style in {"business", "chique"}:
-        score -= 1
-        reasons.append("Sneakers kunnen bij deze stijl, maar alleen als ze rustig en verzorgd zijn.")
-        tips.append("Kies bij business of chique liever rustige sneakers, zoals wit of zwart.")
+        if style in {"business", "chique"}:
+            score -= 1
+            reasons.append("Sneakers kunnen bij deze stijl, maar alleen als ze rustig en verzorgd zijn.")
+            tips.append("Kies bij business of chique liever rustige sneakers, zoals wit of zwart.")
 
-    if shoes_color in {"rood", "lichtrood", "donkerrood", "multicolor"} and style in {"netjes", "business", "chique"}:
-        score -= 2
-        reasons.append("De sneakers vallen sterk op voor deze nette stijl.")
-        tips.append("Kies rustigere sneakers, zoals wit, zwart of grijs.")
+        if shoes_color in {"rood", "lichtrood", "donkerrood", "multicolor"} and style in {"netjes", "business", "chique"}:
+            score -= 2
+            reasons.append("De sneakers vallen sterk op voor deze nette stijl.")
+            tips.append("Kies rustigere sneakers, zoals wit, zwart of grijs.")
 
-    if style == "netjes" and garment_type == "hoodie":
-        score -= 2
-        reasons.append("Sneakers met een hoodie maken de outfit extra casual.")
+        if style == "netjes" and garment_type == "hoodie":
+            score -= 2
+            reasons.append("Sneakers met een hoodie maken de outfit extra casual.")
     
     if outer_layer == "colbert" and shoe_type == "sportschoenen":
         score -= 3
@@ -326,7 +326,52 @@ def rule_based_outfit_check(data: dict) -> dict:
         score -= 4
         reasons.append("Een hoodie botst met de nette uitstraling van deze buitenlaag.")
 
-    elif style == actual_vibe:
+    if garment_type == "overhemd" and style in {"netjes", "business"}:
+        score += 2
+        reasons.append("Een overhemd ondersteunt een nette en verzorgde uitstraling.")
+
+    if garment_type == "overhemd" and style == "sporty":
+        score -= 2
+        reasons.append("Een overhemd voelt meestal minder sporty aan.")
+
+    if garment_type == "overhemd" and shoe_type == "sportschoenen":
+        score -= 2
+        reasons.append("Sportschoenen botsen vaak met de nette uitstraling van een overhemd.")
+
+    if garment_type == "overhemd" and bottom_subtype == "jeans":
+        score += 1
+        reasons.append("Een overhemd kan goed werken met jeans in een smart casual outfit.")
+
+    if outer_layer == "bomberjack" and style in {"business", "chique"}:
+        score -= 3
+        reasons.append("Een bomberjack voelt meestal te casual of sporty voor deze stijl.")
+        tips.append("Kies voor business of chique liever een colbert of rustigere buitenlaag.")
+
+    if outer_layer == "bomberjack" and shoe_type in {"sneakers", "sportschoenen"}:
+        score += 1
+        reasons.append("Een bomberjack werkt goed met sneakers of sportschoenen in een casual of sporty outfit.")
+
+    if outer_layer == "bomberjack" and garment_type in {"blouse", "overhemd"}:
+        score -= 1
+        reasons.append("Een bomberjack maakt een blouse of overhemd minder netjes.")
+
+    if garment_type == "jurk" and style in {"netjes", "chique"}:
+        score += 2
+        reasons.append("Een jurk ondersteunt goed een nette of elegante uitstraling.")
+
+    if garment_type == "jurk" and shoe_type == "sportschoenen":
+        score -= 3
+        reasons.append("Sportschoenen botsen vaak met de uitstraling van een jurk.")
+
+    if garment_type == "jurk" and shoe_type == "sneakers":
+        score += 1
+        reasons.append("Sneakers kunnen een jurk een moderne en casual uitstraling geven.")
+
+    if garment_type == "jurk" and outer_layer == "bomberjack":
+        score -= 1
+        reasons.append("Een bomberjack maakt een jurk sportiever en minder elegant.")
+
+    if style == actual_vibe:
         score += 2
         reasons.append(f"De gekozen stijl past goed bij de echte vibe van de outfit: {actual_vibe}.")
 
@@ -407,15 +452,6 @@ def home():
 def predict(outfit: Outfit):
     data = outfit.model_dump()
     return rule_based_outfit_check(data)
-
-FEEDBACK_PATH = Path(__file__).parent / "feedback.csv"
-
-class Feedback(BaseModel):
-    agree: bool
-    predicted_label: int
-    confidence: Optional[float] = None
-    note: str = ""
-    payload: dict[str, Any]
 
 FEEDBACK_PATH = Path(__file__).parent / "feedback.csv"
 

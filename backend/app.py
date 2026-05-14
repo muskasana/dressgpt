@@ -371,6 +371,23 @@ def rule_based_outfit_check(data: dict) -> dict:
         score -= 1
         reasons.append("Een bomberjack maakt een jurk sportiever en minder elegant.")
 
+    if garment_type == "blouse" and style in {"netjes", "business", "chique"}:
+        score += 2
+        reasons.append("Een blouse ondersteunt een nette, verzorgde uitstraling.")
+
+    if garment_type == "blouse" and bottom_subtype in {"jeans", "pantalon", "stofbroek", "plisse_rok", "maxi_rok"}:
+        score += 1
+        reasons.append("Een blouse werkt goed met dit onderstuk en houdt de outfit verzorgd.")
+
+    if garment_type == "blouse" and shoe_type in {"sneakers", "hakken", "laarzen", "veterschoenen"}:
+        score += 1
+        reasons.append("Deze schoenen passen goed bij een blouse.")
+
+    if garment_type == "blouse" and outer_layer == "bomberjack" and shoe_type == "sportschoenen":
+       score -= 3
+       reasons.append("Een blouse met bomberjack én sportschoenen voelt te veel gemixt.")
+       tips.append("Kies rustigere schoenen of een nettere buitenlaag.")
+
     if style == actual_vibe:
         score += 2
         reasons.append(f"De gekozen stijl past goed bij de echte vibe van de outfit: {actual_vibe}.")

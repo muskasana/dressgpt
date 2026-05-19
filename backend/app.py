@@ -142,6 +142,7 @@ def rule_based_outfit_check(data: dict) -> dict:
     bottom_subtype = (data.get("bottom_subtype") or "").strip().lower()
     shoe_type = (data.get("shoe_type") or "").strip().lower()
     shoes_color = (data.get("shoes_color") or "").strip().lower()
+    bag_type = (data.get("bag_type") or "").strip().lower()
     actual_vibe = detect_outfit_vibe(data)
 
     color_info = {
@@ -552,6 +553,303 @@ def rule_based_outfit_check(data: dict) -> dict:
     if bottom_subtype == "stofbroek" and garment_type == "trui" and shoe_type == "laarzen":
         score -= 2
         reasons.append("Deze combinatie voelt wat zwaar en minder in balans.")
+
+    if shoe_type == "veterschoenen" and style in {"netjes", "business", "chique"}:
+        score += 2
+        reasons.append("Veterschoenen ondersteunen een verzorgde en formele uitstraling.")
+
+    if shoe_type == "veterschoenen" and bottom_subtype == "pantalon":
+        score += 2
+        reasons.append("Veterschoenen passen sterk bij een pantalon.")
+
+    if shoe_type == "veterschoenen" and garment_type in {"hoodie", "trui"}:
+        score -= 2
+        reasons.append("Veterschoenen botsen wat meer met een relaxte uitstraling.")
+
+    if shoe_type == "slippers" and style in {"casual", "sporty"}:
+        score += 2
+        reasons.append("Slippers ondersteunen een ontspannen casual uitstraling.")
+
+    if shoe_type == "slippers" and bottom_subtype in {"jeans", "korte_broek"}:
+        score += 1
+        reasons.append("Slippers passen goed bij een ontspannen outfit.")
+
+    if shoe_type == "slippers" and style == "business":
+        score -= 3
+        reasons.append("Slippers passen meestal niet goed bij een zakelijke uitstraling.")
+
+    if shoe_type == "sandalen" and style in {"casual", "netjes", "chique", "preppy"}:
+        score += 1
+        reasons.append("Sandalen geven de outfit een lichte en stijlvolle uitstraling.")
+
+    if shoe_type == "sandalen" and bottom_subtype in {"jeans", "rok"}:
+        score += 1
+        reasons.append("Sandalen passen goed bij deze zomerse combinatie.")
+
+    if shoe_type == "sandalen" and bottom_subtype == "pantalon":
+        score -= 2
+        reasons.append("Sandalen botsen wat meer met de strakke uitstraling van een pantalon.")
+
+    if bottom_subtype == "korte_broek" and style in {"casual", "sporty", "preppy"}:
+        score += 2
+        reasons.append("Een korte broek ondersteunt een ontspannen en zomerse uitstraling.")
+
+    if bottom_subtype == "korte_broek" and garment_type in {"tshirt", "hoodie"}:
+        score += 1
+        reasons.append("Deze combinatie voelt logisch en casual aan.")
+
+    if bottom_subtype == "korte_broek" and style in {"business", "chique"}:
+        score -= 3
+        reasons.append("Een korte broek past meestal minder goed bij een formele uitstraling.")
+
+    if bottom_subtype == "plisse_rok" and style in {"netjes", "chique"}:
+        score += 2
+        reasons.append("Een plissé rok ondersteunt een elegante en verzorgde uitstraling.")
+
+    if bottom_subtype == "plisse_rok" and garment_type in {"blouse", "overhemd"}:
+        score += 1
+        reasons.append("Deze combinatie werkt stijlvol en in balans.")
+
+    if bottom_subtype == "plisse_rok" and shoe_type in {"sneakers", "sportschoenen"}:
+        score -= 2
+        reasons.append("Sportieve schoenen botsen sneller met de elegante uitstraling van een plissé rok.")
+
+    if bottom_subtype == "maxi_rok" and style in {"casual", "netjes"}:
+        score += 2
+        reasons.append("Een maxi rok geeft de outfit een rustige en stijlvolle uitstraling.")
+
+    if bottom_subtype == "maxi_rok" and garment_type in {"blouse", "overhemd", "hoodie"}:
+        score += 1
+        reasons.append("Deze combinatie werkt goed met de zachte uitstraling van een maxi rok.")
+
+    if bottom_subtype == "maxi_rok" and outer_layer in {"bomberjack", "leren_jasje"}:
+        score -= 2
+        reasons.append("Deze buitenlaag botst wat meer met de rustige flow van een maxi rok.")
+
+    if bottom_subtype == "laagjesrok" and style in {"netjes", "sporty"}:
+        score += 1
+        reasons.append("Een laagjesrok geeft de outfit een speelse en gelaagde uitstraling.")
+
+    if bottom_subtype == "laagjesrok" and garment_type in {"blouse", "hoodie"}:
+        score += 1
+        reasons.append("Deze combinatie werkt goed met de speelse uitstraling van een laagjesrok.")
+
+    if bottom_subtype == "laagjesrok" and outer_layer in {"colbert", "leren_jasje"}:
+        score -= 2
+        reasons.append("Deze buitenlaag botst meer met de zachte en speelse uitstraling van een laagjesrok.")
+
+    if outer_layer == "bomberjack" and style in {"casual", "sporty", "preppy"}:
+        score += 2
+        reasons.append("Een bomberjack ondersteunt een moderne en casual uitstraling.")
+
+    if outer_layer == "bomberjack" and shoe_type in {"sneakers", "sportschoenen", "laarzen"}:
+        score += 1
+        reasons.append("Deze schoenen passen goed bij een bomberjack.")
+
+    if outer_layer == "bomberjack" and style == "chique":
+        score -= 3
+        reasons.append("Een bomberjack voelt meestal te casual voor een chique uitstraling.")
+
+    if outer_layer == "bomberjack" and garment_type in {"overhemd", "trui"}:
+        score -= 2
+        reasons.append("Een bomberjack botst wat meer met deze nette of zachte uitstraling.")
+
+    if outer_layer == "spijkerjasje" and style in {"casual", "sporty"}:
+        score += 2
+        reasons.append("Een spijkerjasje ondersteunt een relaxte en casual uitstraling.")
+
+    if outer_layer == "spijkerjasje" and garment_type in {"blouse", "hoodie"}:
+        score += 1
+        reasons.append("Deze combinatie werkt goed met een spijkerjasje.")
+
+    if outer_layer == "spijkerjasje" and style in {"chique", "preppy"}:
+        score -= 2
+        reasons.append("Een spijkerjasje voelt meestal te casual voor deze stijl.")
+
+    if outer_layer == "spijkerjasje" and bottom_subtype in {"stofbroek", "korte_broek"}:
+        score -= 1
+        reasons.append("Deze combinatie voelt iets minder in balans.")
+
+    if outer_layer == "leren_jasje":
+        score += 1
+        reasons.append("Een leren jasje is een flexibel kledingstuk dat veel stijlen kan versterken.")
+
+    if outer_layer == "leren_jasje" and garment_type in {"tshirt", "hoodie", "blouse"}:
+        score += 1
+        reasons.append("Deze combinatie werkt goed met een leren jasje.")
+
+    if outer_layer == "leren_jasje" and shoe_type in {"sneakers", "laarzen", "hakken"}:
+        score += 1
+        reasons.append("Deze schoenen passen goed bij de uitstraling van een leren jasje.")
+
+    if outer_layer == "opengewerkt vest" and style in {"casual", "business", "preppy"}:
+        score += 2
+        reasons.append("Een opengewerkt vest ondersteunt een zachte en verzorgde uitstraling.")
+
+    if outer_layer == "opengewerkt vest" and garment_type == "blouse":
+        score += 1
+        reasons.append("Een blouse werkt goed met een opengewerkt vest.")
+
+    if outer_layer == "opengewerkt vest" and style in {"sporty", "chique"}:
+        score -= 2
+        reasons.append("Een opengewerkt vest voelt minder passend bij deze stijl.")
+
+    if outer_layer == "opengewerkt vest" and garment_type in {"hoodie", "trui"}:
+        score -= 2
+        reasons.append("Deze combinatie voelt wat te zwaar of minder in balans.")
+
+    if outer_layer == "colbert" and style in {"netjes", "business", "chique"}:
+        score += 2
+        reasons.append("Een colbert ondersteunt een verzorgde en stijlvolle uitstraling.")
+
+    if outer_layer == "colbert" and garment_type in {"blouse", "overhemd"}:
+        score += 1
+        reasons.append("Deze combinatie werkt sterk met een colbert.")
+
+    if outer_layer == "colbert" and garment_type in {"hoodie", "trui"}:
+        score -= 2
+        reasons.append("Deze combinatie " \
+    "botst wat meer met de strakke uitstraling van een colbert.")
+
+    if outer_layer == "colbert" and bottom_subtype in {"pantalon", "stofbroek"}:
+        score -= 1
+        reasons.append("Deze combinatie voelt snel te formeel of te strak aan.")
+
+    if bag_type == "handtas" and style in {"netjes", "business", "chique"}:
+        score += 2
+        reasons.append("Een handtas ondersteunt een verzorgde en stijlvolle uitstraling.")
+
+    if bag_type == "handtas" and shoe_type in {"sneakers", "hakken", "laarzen"}:
+        score += 1
+        reasons.append("Deze schoenen combineren goed met een handtas.")
+
+    if bag_type == "handtas" and style == "sporty":
+        score -= 2
+        reasons.append("Een handtas voelt meestal minder sporty aan.")
+
+    if bag_type == "schoudertas" and style in {"casual", "netjes", "business", "preppy"}:
+        score += 2
+        reasons.append("Een schoudertas ondersteunt een verzorgde maar flexibele uitstraling.")
+
+    if bag_type == "schoudertas" and garment_type in {"tshirt", "blouse", "hoodie"}:
+        score += 1
+        reasons.append("Deze combinatie werkt goed met een schoudertas.")
+
+    if bag_type == "schoudertas" and shoe_type in {"sneakers", "hakken", "laarzen", "veterschoenen"}:
+        score += 1
+        reasons.append("Deze schoenen passen goed bij een schoudertas.")
+
+    if bag_type == "schoudertas" and style == "sporty":
+        score -= 2
+        reasons.append("Een schoudertas voelt meestal minder sporty aan.")
+
+    if bag_type == "rugtas" and style in {"casual", "sporty", "preppy"}:
+        score += 2
+        reasons.append("Een rugtas ondersteunt een praktische en moderne uitstraling.")
+
+    if bag_type == "rugtas" and garment_type in {"tshirt", "longsleeve", "hoodie"}:
+        score += 1
+        reasons.append("Deze combinatie werkt goed met een rugtas.")
+
+    if bag_type == "rugtas" and style == "business":
+        score -= 2
+        reasons.append("Een rugtas voelt meestal minder zakelijk aan.")
+
+    if bag_type == "clutch" and style in {"netjes", "preppy"}:
+        score += 1
+        reasons.append("Een clutch geeft de outfit een stijlvolle accentuitstraling.")
+
+    if bag_type == "clutch" and shoe_type in {"sneakers", "hakken", "laarzen"}:
+        score += 1
+        reasons.append("Deze schoenen combineren goed met een clutch.")
+
+    if bag_type == "clutch" and style in {"casual", "business"}:
+        score -= 2
+        reasons.append("Een clutch voelt minder passend bij deze stijl.")
+
+    if bag_type == "werktas" and style in {"netjes", "business", "preppy"}:
+        score += 2
+        reasons.append("Een werktas ondersteunt een verzorgde en praktische uitstraling.")
+
+    if bag_type == "werktas" and shoe_type in {"hakken", "laarzen", "veterschoenen"}:
+        score += 1
+        reasons.append("Deze schoenen combineren goed met een werktas.")
+
+    if bag_type == "werktas" and garment_type in {"hoodie", "jurk"}:
+        score -= 2
+        reasons.append("Deze combinatie voelt minder logisch met een werktas.")
+
+    if bag_type == "werktas" and style == "sporty":
+        score -= 2
+        reasons.append("Een werktas voelt meestal minder sporty aan.")
+
+    if garment_type == "jurk" and style in {"netjes", "business", "sporty"}:
+        score += 2
+        reasons.append("Een jurk vormt een flexibele basis voor deze stijl.")
+
+    if garment_type == "jurk" and outer_layer in {"bomberjack", "leren_jasje"}:
+        score += 1
+        reasons.append("Deze buitenlaag geeft de jurk een moderne uitstraling.")
+
+    if garment_type == "jurk" and shoe_type in {"sneakers", "hakken"}:
+        score += 1
+        reasons.append("Deze schoenen passen goed bij de uitstraling van de jurk.")
+
+    if garment_type == "jurk" and bag_type in {"handtas", "clutch"}:
+        score += 1
+        reasons.append("Deze tas ondersteunt de uitstraling van de jurk.")
+
+    if garment_type == "jurk" and outer_layer == "hoodie":
+        score -= 2
+        reasons.append("Een hoodie over een jurk voelt minder in balans.")
+
+    if garment_type == "overhemd" and style in {"netjes", "business", "chique"}:
+        score += 2
+        reasons.append("Een overhemd ondersteunt een verzorgde en stijlvolle uitstraling.")
+
+    if garment_type == "overhemd" and outer_layer in {"spijkerjasje", "colbert"}:
+        score += 1
+        reasons.append("Deze buitenlaag werkt goed met een overhemd.")
+
+    if garment_type == "overhemd" and shoe_type in {"sneakers", "hakken"}:
+        score += 1
+        reasons.append("Deze schoenen geven het overhemd een moderne uitstraling.")
+
+    if garment_type == "overhemd" and shoe_type in {"sportschoenen", "laarzen"}:
+        score -= 2
+        reasons.append("Deze schoenen botsen sneller met de strakke uitstraling van een overhemd.")
+    
+    if bottom_subtype == "jeans" and style in {"casual", "netjes", "sporty", "preppy"}:
+        score += 2
+        reasons.append("Jeans vormen een flexibele en moderne basis voor deze outfit.")
+
+    if bottom_subtype == "jeans" and garment_type in {"tshirt", "longsleeve", "blouse", "hoodie", "overhemd"}:
+        score += 1
+        reasons.append("Deze combinatie werkt goed met jeans.")
+
+    if bottom_subtype == "jeans" and outer_layer in {"bomberjack", "leren_jasje", "colbert"}:
+        score += 1
+        reasons.append("Deze buitenlaag combineert sterk met jeans.")
+
+    if bottom_subtype == "jeans" and bag_type == "rugtas":
+        score -= 1
+        reasons.append("Deze combinatie voelt wat te casual of praktisch aan.")
+
+    if garment_type == "hoodie" and style in {"casual", "sporty", "preppy"}:
+        score += 2
+        reasons.append("Een hoodie ondersteunt een ontspannen en moderne uitstraling.")
+
+    if garment_type == "hoodie" and bottom_subtype in {"jeans", "stofbroek"}:
+        score += 1
+        reasons.append("Deze combinatie werkt goed met een hoodie.")
+
+    if garment_type == "hoodie" and outer_layer != "none":
+        score -= 2
+        reasons.append("Een hoodie werkt vaak beter zonder sterke extra buitenlaag.")
+
+    if garment_type == "hoodie" and shoe_type in {"hakken", "veterschoenen"}:
+        score -= 2
+        reasons.append("Deze schoenen botsen sneller met de relaxte uitstraling van een hoodie.")
 
     if style == actual_vibe:
         score += 2

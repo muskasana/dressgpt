@@ -19,7 +19,7 @@ def get_color_type(color: str) -> str:
     color = (color or "none").strip().lower()
 
     neutral = {
-        "zwart", "wit", "grijs", "bruin", "zwart-wit"
+        "zwart", "wit", "grijs", "bruin", "zwart-wit", "beige",
     }
 
     subtle = {
@@ -29,7 +29,7 @@ def get_color_type(color: str) -> str:
         "oranje", "lichtoranje", "donkeroranje",
         "geel", "lichtgeel", "donkergeel",
         "paars", "lichtpaars", "donkerpaars",
-        "roze", "lichtroze", "donkerroze"
+        "roze", "lichtroze", "donkerroze",
     }
 
     colorful = {
@@ -43,6 +43,36 @@ def get_color_type(color: str) -> str:
     if color in subtle:
         return "subtiel"
     return "subtiel"
+
+def get_color_temperature(color: str) -> str:
+    color = (color or "none").strip().lower()
+
+    warm = {
+        "rood", "lichtrood", "donkerrood",
+        "oranje", "lichtoranje", "donkeroranje",
+        "geel", "lichtgeel", "donkergeel",
+        "roze", "lichtroze", "donkerroze",
+        "bruin", "beige",
+    }
+
+    cool = {
+        "blauw", "lichtblauw", "donkerblauw",
+        "groen", "lichtgroen", "donkergroen",
+        "paars", "lichtpaars", "donkerpaars",
+    }
+
+    neutral = {"zwart", "wit", "grijs", "zwart-wit"}
+
+    if color in warm:
+        return "warm"
+    if color in cool:
+        return "cool"
+    if color in neutral:
+        return "neutral"
+    if color == "none":
+        return "none"
+
+    return "neutral"
 
 def detect_outfit_vibe(data: dict) -> str:
     garment_type = (data.get("garment_type") or "").strip().lower()
@@ -149,23 +179,41 @@ def rule_based_outfit_check(data: dict) -> dict:
         "top": {
             "color": (data.get("top_color") or "none").strip().lower(),
             "type": get_color_type(data.get("top_color")),
+            "temperature": get_color_temperature(data.get("top_color")),
         },
         "bottom": {
             "color": (data.get("bottom_color") or "none").strip().lower(),
             "type": get_color_type(data.get("bottom_color")),
+            "temperature": get_color_temperature(data.get("bottom_color")),
         },
         "shoes": {
             "color": (data.get("shoes_color") or "none").strip().lower(),
             "type": get_color_type(data.get("shoes_color")),
+            "temperature": get_color_temperature(data.get("shoes_color")),
         },
         "outer": {
             "color": (data.get("outer_layer_color") or "none").strip().lower(),
             "type": get_color_type(data.get("outer_layer_color"))
             if (data.get("outer_layer") or "none").strip().lower() != "none"
             else "none",
+            "temperature": get_color_temperature(data.get("outer_layer_color"))
+            if (data.get("outer_layer") or "none").strip().lower() != "none"
+            else "none",
         },
     }
 
+    temperatures = []
+
+
+    for item in color_info.values():
+        temp = item.get("temperature")
+
+        if temp not in {"none", "neutral"}:
+            temperatures.append(temp)
+
+    warm_count = temperatures.count("warm")
+    cool_count = temperatures.count("cool")
+    
     used_colors = []
     used_types = []
 
@@ -177,6 +225,10 @@ def rule_based_outfit_check(data: dict) -> dict:
 
     unique_colors = set(used_colors)
     non_neutral_types = {t for t in used_types if t != "neutraal"}
+
+    neutral_count = used_types.count("neutraal")
+    subtle_count = used_types.count("subtiel")
+    colorful_count = used_types.count("kleurrijk")
 
     score = 0
     reasons = []
@@ -200,7 +252,6 @@ def rule_based_outfit_check(data: dict) -> dict:
         reasons.append("De outfit mixt te veel verschillende kleurtypes.")
         tips.append("Probeer het bij maximaal twee kleurtypes te houden.")
 
-    colorful_count = used_types.count("kleurrijk")
     if colorful_count == 1:
         score += 1
         reasons.append("Er is één kleurrijk accent, wat de outfit levendig kan maken.")
@@ -227,6 +278,15 @@ def rule_based_outfit_check(data: dict) -> dict:
         score -= 1
         reasons.append("De buitenlaag en schoenen trekken allebei veel aandacht.")
         tips.append("Maak de jas of schoenen rustiger voor meer balans.")
+
+    if warm_count > 0 and cool_count > 0:
+      tips.append("De outfit mixt warme en koele kleuren. Zorg dat dit bewust en in balans voelt.")
+
+    if warm_count >= 3:
+      reasons.append("De outfit gebruikt een warme kleurenpalette.")
+
+    if cool_count >= 3:
+      reasons.append("De outfit gebruikt een koele kleurenpalette.")
 
     # -------- STIJLREGELS --------
     
@@ -533,14 +593,6 @@ def rule_based_outfit_check(data: dict) -> dict:
     if bottom_subtype == "stofbroek" and style in {"casual", "netjes", "sporty", "chique", "preppy"}:
         score += 1
         reasons.append("Een stofbroek geeft de outfit een verzorgde maar flexibele uitstraling.")
-
-    if bottom_subtype == "stofbroek" and style in {"casual", "netjes", "sporty", "chique", "preppy"}:
-        score += 1
-        reasons.append("Een stofbroek geeft de outfit een verzorgde maar flexibele uitstraling.")
-
-    if bottom_subtype == "stofbroek" and style in {"casual", "netjes", "sporty", "chique", "preppy"}:
-       score += 1
-       reasons.append("Een stofbroek geeft de outfit een verzorgde maar flexibele uitstraling.")
 
     if bottom_subtype == "stofbroek" and outer_layer == "colbert":
         score += 1
